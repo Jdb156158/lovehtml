@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>♥ 心动</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0410;}
+  canvas{display:block;}
+  #hint{position:fixed;left:0;right:0;bottom:22px;text-align:center;
+    color:rgba(255,205,232,.5);font:14px/1.6 -apple-system,"PingFang SC",system-ui,sans-serif;
+    letter-spacing:2px;pointer-events:none;text-shadow:0 0 12px rgba(255,120,190,.4);}
+  #err{position:fixed;top:0;left:0;right:0;padding:10px 14px;background:rgba(180,0,40,.92);
+    color:#fff;font:13px/1.4 monospace;white-space:pre-wrap;display:none;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">♥ 为你跳动 · 点击屏幕绽放星火 ♥</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m,s,l){var d=document.getElementById('err');if(d){d.style.display='block';d.textContent='⚠️ 出错了：'+m+' @行'+(l||'?');}};
+
+var canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+var W,H,DPR,cx,cy,unit,bgGrad;
+var stars=[],outline=[],sparks=[];
+
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth; H=window.innerHeight;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  cx=W/2; cy=H*0.52;
+  unit=Math.min(W*0.72/34, H*0.62/24);
+  // 背景渐变（缓存）
+  bgGrad=ctx.createRadialGradient(cx,cy*0.9,0,cx,cy,Math.max(W,H)*0.75);
+  bgGrad.addColorStop(0,'#1c0a2e');
+  bgGrad.addColorStop(0.5,'#120620');
+  bgGrad.addColorStop(1,'#06020c');
+  // 星空
+  stars=[];
+  var n=Math.round(W*H/7000);
+  for(var i=0;i<n;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*H,
+      r:Math.random()*1.4+0.3, ph:Math.random()*6.28,
+      sp:Math.random()*0.6+0.2, vy:Math.random()*0.18+0.04});
+  }
+}
+window.addEventListener('resize',resize);
+
+// 心形参数方程（经典）
+function heartXY(t){
+  var x=16*Math.pow(Math.sin(t),3);
+  var y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+  return [x,-y];
+}
+
+// 心跳缩放（lub-dub 双拍）
+function beat(t){
+  var p=(t%1.15)/1.15;
+  var s=Math.exp(-Math.pow((p-0.10)/0.045,2))+0.55*Math.exp(-Math.pow((p-0.27)/0.055,2));
+  return 1+0.085*s;
+}
+
+function buildOutline(sc){
+  outline.length=0;
+  for(var i=0;i<=200;i++){
+    var p=heartXY(i/200*Math.PI*2);
+    outline.push([cx+p[0]*unit*sc, cy+p[1]*unit*sc]);
+  }
+}
+
+function drawHeart(t,sc){
+  buildOutline(sc);
+  var g=ctx.createLinearGradient(cx-16*unit,cy,cx+16*unit,cy);
+  g.addColorStop(0,'#ff5e9c');
+  g.addColorStop(0.5,'#ff7ab8');
+  g.addColorStop(1,'#9b6bff');
+  ctx.beginPath();
+  ctx.moveTo(outline[0][0],outline[0][1]);
+  for(var i=1;i<outline.length;i++) ctx.lineTo(outline[i][0],outline[i][1]);
+  ctx.closePath();
+  ctx.lineJoin='round';
+  ctx.lineWidth=3.2;
+  ctx.strokeStyle=g;
+  ctx.shadowColor='rgba(255,90,170,0.9)';
+  ctx.shadowBlur=22;
+  ctx.stroke();
+  ctx.shadowBlur=0;
+}
+
+function drawLove(t,sc){
+  var sz=unit*0.46*sc;
+  ctx.save();
+  ctx.translate(cx, cy-unit*0.15*sc);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='bold '+sz+'px "Trebuchet MS",-apple-system,system-ui,sans-serif';
+  ctx.shadowColor='rgba(255,150,200,0.9)';
+  ctx.shadowBlur=20;
+  ctx.fillStyle='rgba(255,255,255,0.96)';
+  ctx.fillText('LOVE',0,0);
+  ctx.restore();
+}
+
+function drawStars(t){
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i];
+    s.y-=s.vy; if(s.y<-2){s.y=H+2; s.x=Math.random()*W;}
+    var a=0.35+0.45*(0.5+0.5*Math.sin(t*s.sp+s.ph));
+    ctx.beginPath();
+    ctx.fillStyle='rgba(255,225,245,'+a.toFixed(3)+')';
+    ctx.arc(s.x,s.y,s.r,0,6.283);
+    ctx.fill();
+  }
+}
+
+function spawnSparks(){
+  for(var i=0;i<34;i++){
+    var p=outline[(Math.random()*outline.length)|0];
+    var ang=Math.random()*6.283, sp=Math.random()*1.6+0.4;
+    sparks.push({x:p[0],y:p[1],vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-0.6,
+      life:1,hue:300+Math.random()*40});
+  }
+}
+function drawSparks(){
+  for(var i=sparks.length-1;i>=0;i--){
+    var s=sparks[i];
+    s.x+=s.vx; s.y+=s.vy; s.vy+=0.02; s.vx*=0.97; s.life-=0.018;
+    if(s.life<=0){sparks.splice(i,1);continue;}
+    ctx.beginPath();
+    ctx.fillStyle='hsla('+s.hue+',100%,72%,'+s.life.toFixed(3)+')';
+    ctx.arc(s.x,s.y,1.8*s.life+0.6,0,6.283);
+    ctx.fill();
+  }
+}
+
+var t0=performance.now();
+function frame(now){
+  var t=(now-t0)/1000;
+  ctx.fillStyle=bgGrad; ctx.fillRect(0,0,W,H);
+  drawStars(t);
+  var sc=beat(t);
+  drawHeart(t,sc);
+  drawLove(t,sc);
+  drawSparks();
+  requestAnimationFrame(frame);
+}
+
+canvas.addEventListener('click',spawnSparks);
+canvas.addEventListener('touchstart',function(e){e.preventDefault();spawnSparks();},{passive:false});
+
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

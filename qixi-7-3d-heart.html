@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💗 3D 立体旋转爱心</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:radial-gradient(circle at 50% 40%,#1a0530,#05010f 70%);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;cursor:grab;}
+  #c{display:block;}
+  .title{position:fixed;left:0;right:0;top:7%;text-align:center;color:#fff;
+    font-size:clamp(18px,4vw,26px);letter-spacing:6px;text-shadow:0 0 20px #ff5fa2;
+    pointer-events:none;font-weight:300;}
+  .name{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;
+    color:#ffd9ec;font-size:clamp(18px,5vw,30px);letter-spacing:4px;pointer-events:none;
+    text-shadow:0 0 18px #ff5fa2;font-weight:300;line-height:1.5;}
+  .tip{position:fixed;left:0;right:0;bottom:24px;text-align:center;color:#ffc2e0;
+    font-size:13px;letter-spacing:2px;opacity:.75;pointer-events:none;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="title">三 维 立 体 · 爱 心 永 恒</div>
+<canvas id="c"></canvas>
+<div class="name" id="name">致 最 爱 的 你</div>
+<div class="tip">拖动可旋转 · 点击屏幕绽放星火</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,cx,cy,scale;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;
+  cx=W/2;cy=H/2;scale=Math.min(W,H)/2.6;}
+resize();addEventListener('resize',resize);
+
+// 3D 心方程 (x²+2.25y²+z²-1)³ - x²z³ - 0.225y²z³ ≤ 0  （z 为竖直轴）
+function inside(x,y,z){
+  const a=x*x+2.25*y*y+z*z-1;
+  return a*a*a - x*x*z*z*z - 0.225*y*y*z*z*z <= 0;
+}
+const pts=[];
+(function(){
+  let tries=0;
+  while(pts.length<2600 && tries<400000){
+    tries++;
+    const x=(Math.random()*2-1)*1.3;
+    const y=(Math.random()*2-1)*1.1;
+    const z=(Math.random()*2-1)*1.4;
+    if(inside(x,y,z)) pts.push({x,y,z});
+  }
+})();
+
+let rotY=0, vrot=0.006;
+let drag=false,lastX=0;
+function down(x){drag=true;lastX=x;}
+function move(x){if(drag){rotY+=(x-lastX)*0.01;lastX=x;}}
+function up(){drag=false;}
+addEventListener('mousedown',e=>down(e.clientX));
+addEventListener('mouseup',up);
+addEventListener('mousemove',e=>move(e.clientX));
+addEventListener('touchstart',e=>down(e.touches[0].clientX));
+addEventListener('touchend',up);
+addEventListener('touchmove',e=>move(e.touches[0].clientX));
+
+const stars=Array.from({length:160},()=>({x:Math.random()*W,y:Math.random()*H,
+  r:Math.random()*1.2+0.3,tw:Math.random()*6.28}));
+
+const burst=[];
+addEventListener('click',e=>{
+  for(let i=0;i<42;i++){
+    const a=Math.random()*6.28,sp=Math.random()*4+2;
+    burst.push({x:e.clientX,y:e.clientY,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+      life:1,hue:Math.random()*40+330});
+  }
+});
+
+function render(){
+  rotY+=vrot;
+  ctx.fillStyle='rgba(5,1,15,0.35)';ctx.fillRect(0,0,W,H);
+  for(const s of stars){s.tw+=0.04;const a=0.3+Math.sin(s.tw)*0.4;
+    ctx.beginPath();ctx.fillStyle='rgba(255,255,255,'+a+')';
+    ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();}
+
+  const cos=Math.cos(rotY),sin=Math.sin(rotY);
+  const arr=[];
+  for(const p of pts){
+    const xr=p.x*cos - p.y*sin;
+    const depth=p.x*sin + p.y*cos;
+    arr.push({sx:cx+xr*scale, sy:cy-p.z*scale, depth});
+  }
+  arr.sort((a,b)=>a.depth-b.depth);
+  ctx.globalCompositeOperation='lighter';
+  for(const q of arr){
+    const t=(q.depth+1.1)/2.2;
+    const hue=340 - t*40;
+    const alpha=0.35+t*0.55;
+    const r=0.8+t*1.4;
+    ctx.beginPath();
+    ctx.fillStyle='hsla('+hue+',100%,'+(55+t*15)+'%,'+alpha+')';
+    ctx.arc(q.sx,q.sy,r,0,7);ctx.fill();
+  }
+  ctx.globalCompositeOperation='lighter';
+
+  for(let i=burst.length-1;i>=0;i--){
+    const b=burst[i];b.x+=b.vx;b.y+=b.vy;b.vy+=0.05;b.life-=0.02;
+    if(b.life<=0){burst.splice(i,1);continue;}
+    ctx.beginPath();ctx.globalAlpha=b.life;
+    ctx.fillStyle='hsl('+b.hue+',100%,70%)';
+    ctx.arc(b.x,b.y,2.2,0,7);ctx.fill();      ctx.globalAlpha=1;
+  }
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梦幻粒子爱心 七夕</title>
+<style>
+  *{margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;background:#05010f;}
+  canvas{display:block;}
+  .cap{position:fixed;left:0;right:0;bottom:26px;text-align:center;
+    font:600 15px/1.6 "PingFang SC","Microsoft YaHei",sans-serif;
+    color:rgba(255,225,240,.55);letter-spacing:3px;pointer-events:none;
+    text-shadow:0 0 12px rgba(255,120,180,.5);z-index:5;}
+  .hint{position:fixed;left:0;right:0;top:18px;text-align:center;
+    font:13px/1.4 "PingFang SC",sans-serif;color:rgba(255,255,255,.32);
+    pointer-events:none;z-index:5;letter-spacing:1px;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint">点击切换配色 移动鼠标粒子会避开</div>
+<div class="cap">七 夕 快 乐</div>
+<script>
+window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();addEventListener('resize',resize);
+
+const THEMES=[
+  {name:'rose',  accent:[255,138,180], ember:[214,80,140], gold:[255,210,150]},
+  {name:'violet',accent:[180,140,255], ember:[140,90,220],  gold:[210,190,255]},
+  {name:'aurora',accent:[120,230,200], ember:[80,180,160],  gold:[180,230,200]},
+  {name:'blue',  accent:[140,190,255], ember:[90,140,230],  gold:[190,210,255]}
+];
+let ci=0;
+let acc=THEMES[0].accent.slice(), emb=THEMES[0].ember.slice(), gol=THEMES[0].gold.slice();
+let tAcc=acc.slice(), tEmb=emb.slice(), tGol=gol.slice();
+function lerp(a,b,t){return a+(b-a)*t;}
+
+const mouse={x:-9999,y:-9999,active:false};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;});
+addEventListener('mouseleave',()=>mouse.active=false);
+addEventListener('click',()=>{ci=(ci+1)%THEMES.length;tAcc=THEMES[ci].accent.slice();tEmb=THEMES[ci].ember.slice();tGol=THEMES[ci].gold.slice();});
+
+const HEART_SCALE=()=>Math.min(W,H)*0.014;
+function isInsideHeart(x,y){
+  const nx=x/16, ny=-y/16;
+  const x2=nx*nx, y2=ny*ny;
+  const v=Math.pow(x2+y2-1,3)-x2*ny*ny*ny;
+  return v<=0;
+}
+function randomHeartPoint(){
+  let px,py;
+  do{ px=(Math.random()*2-1)*17; py=(Math.random()*2-1)*18-2; }
+  while(!isInsideHeart(px,py));
+  const s=HEART_SCALE();
+  return {x:px*s,y:py*s};
+}
+
+const stars=Array.from({length:140},()=>({
+  x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.3,
+  ph:Math.random()*6.28,sp:Math.random()*0.3+0.1
+}));
+
+const N=1800;
+class P{
+  constructor(){this.init();}
+  init(){
+    const p=randomHeartPoint();
+    this.tx=p.x;this.ty=p.y;this.x=p.x;this.y=p.y;
+    this.depth=Math.random();
+    this.size=(0.7+Math.random()*2.0)*(0.5+this.depth*0.6);
+    this.alpha=0.35+Math.random()*0.5;
+    this.life=200+Math.random()*260;this.max=this.life;
+    this.trail=[];this.ta=Math.random()*6.28;this.ts=0.005+Math.random()*0.012;this.tr=2+Math.random()*4;
+    this.spark=Math.random()>0.95;
+    this.gold=!this.spark&&Math.random()>0.9;
+  }
+  update(t,pulse){
+    this.ta+=this.ts;
+    const dx=Math.cos(this.ta)*this.tr, dy=Math.sin(this.ta)*this.tr;
+    const gx=this.tx*pulse+dx, gy=this.ty*pulse+dy;
+    const px=this.x, py=this.y;
+    this.x+=(gx-this.x)*0.08; this.y+=(gy-this.y)*0.08;
+    if(mouse.active){
+      const mdx=(this.x+W/2)-mouse.x, mdy=(this.y+H/2)-mouse.y;
+      const d=Math.hypot(mdx,mdy);
+      if(d<120){const f=(120-d)/120*7;this.x+=mdx/d*f;this.y+=mdy/d*f;}
+    }
+    this.trail.push({x:px,y:py});
+    if(this.trail.length>3)this.trail.shift();
+    if(this.spark)this.alpha=0.3+Math.abs(Math.sin(t*0.15+this.ta*3))*0.7;
+    this.life--; if(this.life<=0)this.init();
+  }
+  draw(){
+    const fi=Math.min(1,(this.max-this.life)/30), fo=Math.min(1,this.life/40), f=fi*fo;
+    let r,g,b;
+    if(this.gold){[r,g,b]=gol;}
+    else if(this.spark){r=255;g=250;b=245;}
+    else{const m=this.depth;r=lerp(acc[0],emb[0],m);g=lerp(acc[1],emb[1],m);b=lerp(acc[2],emb[2],m);}
+    r=r|0;g=g|0;b=b|0;
+    for(let i=0;i<this.trail.length;i++){
+      const a=(i/this.trail.length)*0.15*this.alpha*f;
+      const s=this.size*(0.4+0.3*(i/this.trail.length));
+      ctx.fillStyle='rgba('+r+','+g+','+b+','+a.toFixed(3)+')';
+      ctx.beginPath();ctx.arc(this.trail[i].x,this.trail[i].y,s,0,6.29);ctx.fill();
+    }
+    const a=this.alpha*f;
+    ctx.fillStyle='rgba('+r+','+g+','+b+','+a.toFixed(3)+')';
+    ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,6.29);ctx.fill();
+    if(this.spark&&a>0.5){
+      ctx.fillStyle='rgba('+r+','+g+','+b+','+(a*0.18).toFixed(3)+')';
+      ctx.beginPath();ctx.arc(this.x,this.y,this.size*3,0,6.29);ctx.fill();
+    }
+  }
+}
+const ps=Array.from({length:N},()=>new P());
+
+let time=0,last=0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  const dt=Math.min((ts-last)/16.67,3);last=ts;time+=0.08*dt;
+  acc=[lerp(acc[0],tAcc[0],0.02),lerp(acc[1],tAcc[1],0.02),lerp(acc[2],tAcc[2],0.02)];
+  emb=[lerp(emb[0],tEmb[0],0.02),lerp(emb[1],tEmb[1],0.02),lerp(emb[2],tEmb[2],0.02)];
+  gol=[lerp(gol[0],tGol[0],0.02),lerp(gol[1],tGol[1],0.02),lerp(gol[2],tGol[2],0.02)];
+
+  const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.75);
+  bg.addColorStop(0,'#0b0420');bg.addColorStop(1,'#05010f');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  ctx.globalCompositeOperation='lighter';
+  for(const s of stars){
+    const a=0.15+0.35*(0.5+0.5*Math.sin(time*s.sp+s.ph));
+    ctx.fillStyle='rgba('+acc[0]+','+acc[1]+','+acc[2]+','+a.toFixed(3)+')';
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,6.29);ctx.fill();
+  }
+
+  const s=HEART_SCALE();
+  const gx=ctx.createRadialGradient(W/2,H/2,s*4,W/2,H/2,s*22);
+  gx.addColorStop(0,'rgba('+acc[0]+','+acc[1]+','+acc[2]+',0.10)');
+  gx.addColorStop(0.5,'rgba('+emb[0]+','+emb[1]+','+emb[2]+',0.04)');
+  gx.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gx;ctx.beginPath();ctx.arc(W/2,H/2,s*22,0,6.29);ctx.fill();
+
+  const pulse=1+Math.sin(time*0.6)*0.07;
+  ctx.save();ctx.translate(W/2,H/2);
+  for(const p of ps){p.update(time,pulse);p.draw();}
+  ctx.restore();
+  ctx.globalCompositeOperation='source-over';
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

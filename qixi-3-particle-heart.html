@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ 七夕 · 粒子汇聚成心</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:radial-gradient(circle at 50% 50%,#240a3a,#08010f);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;cursor:crosshair;}
+  #c{display:block;}
+  .hint{position:fixed;left:0;right:0;bottom:26px;text-align:center;color:#ffb3d9;
+    font-size:13px;letter-spacing:3px;opacity:.7;text-shadow:0 0 10px #ff5fa2;pointer-events:none;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<canvas id="c"></canvas>
+<div class="hint">粒子汇聚成心 · 移动鼠标可拨开它们</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,cx,cy,scale;
+function resize(){
+  W=canvas.width=innerWidth;H=canvas.height=innerHeight;
+  cx=W/2;cy=H/2;scale=Math.min(W,H)/3.4;
+}
+resize();addEventListener('resize',resize);
+
+// 爱心隐函数： (x²+y²-1)³ - x²y³ ≤ 0  (y 向上)
+function insideHeart(x,y){
+  const a=x*x+y*y-1;
+  return a*a*a - x*x*y*y*y <= 0;
+}
+// 生成目标点
+const targets=[];
+(function build(){
+  let tries=0;
+  while(targets.length<1100 && tries<60000){
+    tries++;
+    const x=(Math.random()*2-1)*1.35;
+    const y=(Math.random()*2-1)*1.35;
+    if(insideHeart(x,y)){
+      // 边缘更密一些：用概率保留
+      targets.push({x:x*scale, y:-y*scale});
+    }
+  }
+})();
+
+const particles=targets.map(t=>({
+  tx:cx+t.x, ty:cy+t.y,
+  x:Math.random()*W, y:Math.random()*H,
+  vx:0, vy:0,
+  hue:Math.random()*45+330,
+  size:Math.random()*2.2+1.2
+}));
+
+const mouse={x:-9999,y:-9999};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+addEventListener('mouseout',()=>{mouse.x=-9999;mouse.y=-9999;});
+
+let formed=false, formT=0;
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  for(const p of particles){
+    // 朝目标移动
+    const dx=p.tx-p.x, dy=p.ty-p.y;
+    p.vx=(p.vx+dx*0.012)*0.86;
+    p.vy=(p.vy+dy*0.012)*0.86;
+    // 鼠标排斥
+    const mdx=p.x-mouse.x, mdy=p.y-mouse.y;
+    const d2=mdx*mdx+mdy*mdy;
+    if(d2<9000){
+      const f=(9000-d2)/9000*6;
+      const d=Math.sqrt(d2)||1;
+      p.vx+=mdx/d*f; p.vy+=mdy/d*f;
+    }
+    p.x+=p.vx; p.y+=p.vy;
+
+    const sp=Math.min(1,Math.hypot(p.vx,p.vy)*0.15);
+    ctx.beginPath();
+    ctx.fillStyle='hsla('+p.hue+',100%,'+(60+sp*25)+'%,'+(0.55+sp*0.4)+')';
+    ctx.arc(p.x,p.y,p.size,0,7);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+
+  // 成形后显示文字
+  if(!formed){
+    let maxd=0;
+    for(const p of particles) maxd=Math.max(maxd,Math.hypot(p.tx-p.x,p.ty-p.y));
+    if(maxd<2.5){formed=true;}
+  } else {
+    formT+=0.02;
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,formT);
+    ctx.fillStyle='#fff';
+    ctx.font='300 '+Math.min(W,H)/14+'px "PingFang SC","Microsoft YaHei"';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='#ff5fa2';ctx.shadowBlur=20;
+    ctx.fillText('七夕 · 遇见你', cx, cy);
+    ctx.restore();
+  }
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

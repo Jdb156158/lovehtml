@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💌 点开我的心意</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:linear-gradient(160deg,#1a0033,#3d0a4d 55%,#5a0f5e);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;position:fixed;inset:0;}
+  .stage{position:fixed;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;z-index:2;}
+  .btn{cursor:pointer;border:none;color:#fff;font-size:20px;letter-spacing:4px;
+    padding:16px 40px;border-radius:40px;
+    background:linear-gradient(45deg,#ff5e9c,#ff3d6e);
+    box-shadow:0 10px 40px rgba(255,61,110,.55);font-family:inherit;
+    transition:transform .2s, box-shadow .2s;animation:pulse 2s infinite;}
+  .btn:hover{transform:scale(1.06);box-shadow:0 14px 50px rgba(255,61,110,.7);}
+  @keyframes pulse{50%{box-shadow:0 10px 60px rgba(255,61,110,.9);}}
+  .pre{color:#ffd9ec;font-size:15px;letter-spacing:3px;margin-bottom:26px;opacity:.85;}
+  .letter{max-width:80%;color:#fff;font-size:clamp(17px,4.5vw,24px);line-height:2;
+    letter-spacing:2px;text-shadow:0 0 16px #ff5fa2;font-weight:300;}
+  .letter .cur{display:inline-block;width:10px;height:1.1em;background:#ff8ec4;
+    vertical-align:-0.18em;margin-left:2px;animation:blink .8s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .sign{margin-top:30px;color:#ffc2e0;font-size:15px;letter-spacing:2px;opacity:0;transition:opacity 1s;}
+  .replay{margin-top:22px;color:#ffd9ec;font-size:13px;letter-spacing:2px;opacity:0;
+    transition:opacity 1s;cursor:pointer;text-decoration:underline;}
+  .hidden{opacity:0;pointer-events:none;transform:scale(.9);}
+  .stage,.pre,.btn,.letter,.sign,.replay{transition:opacity .8s, transform .8s;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<canvas id="c"></canvas>
+<div class="stage" id="stage">
+  <div class="pre">有句话，我想当面说给你听</div>
+  <button class="btn" id="start">💖 点 我 开 始</button>
+</div>
+<script>
+// ===== 可自定义内容 =====
+const MESSAGE = ["遇见你，是我所有好运的开端。",
+  "想和你一起，把每一个平凡的日子过成诗。",
+  "往后余生，风雪是你，平淡是你，清贫也是你。",
+  "七夕快乐，我喜欢的，是你。"];
+const SIGN = "—— 想把余生都给你的我";
+// =========================
+
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}resize();addEventListener('resize',resize);
+
+const stage=document.getElementById('stage');
+const start=document.getElementById('start');
+const sparks=[];
+function heartBurst(x,y,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*6.28,sp=Math.random()*6+2;
+    sparks.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+      life:1,decay:Math.random()*0.012+0.006,
+      size:Math.random()*3+2,hue:Math.random()*45+330});
+  }
+}
+heartBurst(W/2,H/2,0);
+
+let running=false;
+start.addEventListener('click',()=>{
+  if(running)return;running=true;
+  stage.style.opacity='0';stage.style.pointerEvents='none';
+  setTimeout(()=>stage.remove(),800);
+  heartBurst(W/2,H/2,160);
+  typeLetter();
+});
+
+function typeLetter(){
+  const el=document.createElement('div');
+  el.className='letter';el.style.position='fixed';el.style.left='50%';el.style.top='50%';
+  el.style.transform='translate(-50%,-50%)';el.style.zIndex='3';
+  document.body.appendChild(el);
+  const cur=document.createElement('span');cur.className='cur';
+  const sign=document.createElement('div');sign.className='sign';sign.textContent=SIGN;
+  const replay=document.createElement('div');replay.className='replay';replay.textContent='再读一遍 ↺';
+  document.body.appendChild(sign);document.body.appendChild(replay);
+
+  let li=0,ci=0,buf='';
+  const full=MESSAGE.join('\n');
+  function step(){
+    if(li>=MESSAGE.length){
+      el.innerHTML=buf.replace(/\n/g,'<br>');
+      el.appendChild(cur);
+      setTimeout(()=>{cur.remove();sign.style.opacity='1';replay.style.opacity='1';},500);
+      return;
+    }
+    const line=MESSAGE[li];
+    if(ci<line.length){
+      buf+=line[ci++];
+      el.innerHTML=buf.replace(/\n/g,'<br>')+'<span class="cur"></span>';
+      if(Math.random()<0.5) heartBurst(W*(0.2+Math.random()*0.6),H*(0.2+Math.random()*0.6),4);
+      setTimeout(step,70+Math.random()*60);
+    }else{
+      buf+=line+'\n';li++;ci=0;
+      setTimeout(step,420);
+    }
+  }
+  step();
+
+  replay.addEventListener('click',()=>{
+    buf='';li=0;ci=0;sign.style.opacity='0';replay.style.opacity='0';
+    setTimeout(step,400);
+  });
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  for(let i=sparks.length-1;i>=0;i--){
+    const p=sparks[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.06;p.vx*=0.985;p.vy*=0.985;p.life-=p.decay;
+    if(p.life<=0){sparks.splice(i,1);continue;}
+    ctx.beginPath();ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle='hsla('+p.hue+',100%,'+(60+p.life*20)+'%,0.85)';
+    ctx.arc(p.x,p.y,p.size*p.life+0.6,0,7);ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

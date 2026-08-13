@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流光拖尾爱心 七夕</title>
+<style>
+  *{margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;background:#04020c;}
+  canvas{display:block;}
+  .hint{position:fixed;left:0;right:0;top:18px;text-align:center;
+    font:13px/1.4 "PingFang SC",sans-serif;color:rgba(255,255,255,.32);
+    pointer-events:none;z-index:5;letter-spacing:1px;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint">点击切换配色 移动鼠标粒子跟随</div>
+<script>
+window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;buildPath();}
+addEventListener('resize',resize);
+
+const SCHEMES=['rainbow','pink','violet','gold'];
+let scheme=0;
+const TRAILS=54, LEN=26, SPEED=1;
+
+let path=[];
+function buildPath(){
+  path=[];
+  const cx=W/2, cy=H*0.46, sc=Math.min(W,H)*0.016;
+  const steps=160;
+  for(let i=0;i<steps;i++){
+    const t=i/steps*Math.PI*2;
+    const x=cx+16*Math.pow(Math.sin(t),3)*sc;
+    const y=cy-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*sc;
+    path.push([x,y]);
+  }
+}
+
+const mouse={x:0,y:0,active:false};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;});
+addEventListener('mouseleave',()=>mouse.active=false);
+addEventListener('click',()=>{scheme=(scheme+1)%SCHEMES.length;});
+
+function colorFor(i,n){
+  const s=SCHEMES[scheme];
+  if(s==='rainbow') return 'hsla('+(i/n*360)+',90%,62%,0.9)';
+  if(s==='pink')    return 'hsla('+(330+Math.random()*20)+',90%,65%,0.9)';
+  if(s==='violet')  return 'hsla('+(265+Math.random()*25)+',85%,66%,0.9)';
+  return 'hsla('+(44+Math.random()*16)+',90%,62%,0.9)'; // gold
+}
+
+let trails=[];
+function init(){
+  trails=[];
+  for(let i=0;i<TRAILS;i++){
+    const arr=[];
+    const x=Math.random()*W, y=Math.random()*H;
+    for(let k=0;k<LEN;k++){
+      arr.push({
+        x,y, vx:0, vy:0,
+        size:((1-k/LEN)+0.6)*2.0,
+        ti:Math.floor(Math.random()*path.length),
+        dir:i%2?1:-1,
+        sp:Math.random()*0.6+0.6,
+        fr:Math.random()*0.2+0.78,
+        hue:i/TRAILS
+      });
+    }
+    trails.push(arr);
+  }
+}
+resize();init();
+
+function frame(){
+  requestAnimationFrame(frame);
+  ctx.fillStyle='rgba(4,2,12,0.20)';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.globalCompositeOperation='lighter';
+  for(const tr of trails){
+    const lead=tr[0];
+    const tg=path[lead.ti%path.length];
+
+    if(mouse.active){
+      const dx=mouse.x-lead.x, dy=mouse.y-lead.y, d=Math.hypot(dx,dy);
+      if(d<320&&d>0){const f=(1-d/320)*0.9;lead.vx+=dx/d*f;lead.vy+=dy/d*f;}
+    }
+    let dx=lead.x-tg[0], dy=lead.y-tg[1], d=Math.hypot(dx,dy)||1;
+    if(d<10){
+      if(Math.random()>0.95) lead.ti=Math.floor(Math.random()*path.length);
+      else { if(Math.random()>0.98) lead.dir*=-1; lead.ti=(lead.ti+lead.dir+path.length)%path.length; }
+    }
+    lead.vx+=-dx/d*lead.sp*SPEED; lead.vy+=-dy/d*lead.sp*SPEED;
+    lead.x+=lead.vx; lead.y+=lead.vy; lead.vx*=lead.fr; lead.vy*=lead.fr;
+
+    const col=colorFor(lead.hue,1);
+    for(let k=0;k<tr.length;k++){
+      const p=tr[k];
+      if(k>0){p.x+=(tr[k-1].x-p.x)*0.62;p.y+=(tr[k-1].y-p.y)*0.62;}
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,6.29);ctx.fill();
+    }
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

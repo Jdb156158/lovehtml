@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💕 七夕 · 爱心雨</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:linear-gradient(160deg,#1a0033,#3d0a4d 55%,#5a0f5e);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;}
+  .msg{position:fixed;left:0;right:0;bottom:38px;text-align:center;color:#ffd6ec;
+    font-size:clamp(15px,3.5vw,20px);letter-spacing:3px;text-shadow:0 0 14px #ff5fa2;
+    pointer-events:none;line-height:1.8;}
+  .top{position:fixed;left:0;right:0;top:9%;text-align:center;color:#fff;
+    font-size:clamp(20px,4.6vw,30px);letter-spacing:8px;text-shadow:0 0 22px #ff5fa2;
+    pointer-events:none;font-weight:300;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="top">星 河 滚 烫 · 你 是 人 间 理 想</div>
+<canvas id="c"></canvas>
+<div class="msg">愿天下有情人，都成了眷属<br>— 七夕 —</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();addEventListener('resize',resize);
+
+const colors=['#ff5e9c','#ff8ec4','#ff3d6e','#ffb3d9','#ff6f91','#ffa6c9','#ff4f87'];
+const hearts=[];
+function makeHeart(){
+  return{
+    x:Math.random()*W,
+    y:-30-Math.random()*H,
+    s:Math.random()*16+10,
+    vy:Math.random()*1.4+0.8,
+    vx:(Math.random()-.5)*0.8,
+    sway:Math.random()*Math.PI*2,
+    swaySpeed:Math.random()*0.03+0.01,
+    rot:(Math.random()-.5)*0.5,
+    color:colors[(Math.random()*colors.length)|0],
+    alpha:Math.random()*0.4+0.6
+  };
+}
+for(let i=0;i<70;i++){const h=makeHeart();h.y=Math.random()*H;hearts.push(h);}
+
+function heartPath(ctx){
+  ctx.beginPath();
+  for(let a=0;a<=Math.PI*2+0.02;a+=0.05){
+    const xv=16*Math.pow(Math.sin(a),3);
+    const yv=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+    a===0?ctx.moveTo(xv,yv):ctx.lineTo(xv,yv);
+  }
+  ctx.closePath();
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  for(const h of hearts){
+    h.y+=h.vy; h.x+=h.vx+Math.sin(h.sway)*0.6; h.sway+=h.swaySpeed;
+    if(h.y>H+40){Object.assign(h,makeHeart());h.y=-30;}
+    if(h.x<-30)h.x=W+30; if(h.x>W+30)h.x=-30;
+    ctx.save();
+    ctx.translate(h.x,h.y);
+    ctx.rotate(h.rot+Math.sin(h.sway)*0.2);
+    ctx.scale(h.s/16,h.s/16);
+      ctx.globalAlpha=h.alpha;
+      ctx.fillStyle=h.color;
+      heartPath(ctx);ctx.fill();
+      ctx.restore();
+  }
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

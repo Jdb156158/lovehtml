@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💞 把名字写进心里</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:#02000a;
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;cursor:pointer;}
+  .bottom{position:fixed;left:0;right:0;bottom:28px;text-align:center;color:#cfe6ff;
+    pointer-events:none;}
+  .bottom input{pointer-events:auto;background:rgba(255,255,255,.08);
+    border:1px solid rgba(140,200,255,.55);color:#fff;font-size:16px;
+    padding:9px 14px;border-radius:24px;outline:none;text-align:center;
+    width:230px;font-family:inherit;letter-spacing:2px;
+    box-shadow:0 0 16px rgba(140,200,255,.25);}
+  .bottom input::placeholder{color:#9ab8d8;}
+  .hint{margin-top:10px;font-size:12px;letter-spacing:2px;opacity:.75;
+    color:#a8c8e8;text-shadow:0 0 8px rgba(140,200,255,.4);}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<canvas id="c"></canvas>
+<div class="bottom">
+  <input id="nm" maxlength="8" value="宝贝" placeholder="输入名字（最多8字）">
+  <div class="hint" id="hint">点击下方输入名字，结束编辑后粒子汇成跳动的心</div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const input=document.getElementById('nm');
+const hint=document.getElementById('hint');
+let W,H,MIN,bgGrad,glowGrad,stars=[],particles=[],mode='beat';
+
+// 统一蓝配色：编辑态与跳动态都使用同一套色系
+const PALETTE='blue';
+
+function makeScenery(){
+  bgGrad=ctx.createRadialGradient(W/2,H*0.4,0,W/2,H*0.4,Math.max(W,H)*0.85);
+  bgGrad.addColorStop(0,'#1a0a35');
+  bgGrad.addColorStop(0.55,'#0a0418');
+  bgGrad.addColorStop(1,'#02000a');
+  glowGrad=ctx.createRadialGradient(W/2,H*0.42,0,W/2,H*0.42,MIN*0.52);
+  glowGrad.addColorStop(0,'rgba(140,200,255,0.20)');
+  glowGrad.addColorStop(0.5,'rgba(180,100,230,0.08)');
+  glowGrad.addColorStop(1,'rgba(0,0,0,0)');
+  stars=[];const n=Math.round(MIN/10);
+  for(let i=0;i<n;i++)stars.push({x:Math.random()*W,y:Math.random()*H,
+    r:Math.random()*1.4+0.4,ph:Math.random()*6.28,
+    sp:Math.random()*0.0015+0.0005,drift:Math.random()*0.18+0.05,
+    hue:Math.random()<0.55?200:330});
+}
+function resize_(){
+  W=canvas.width=innerWidth;H=canvas.height=innerHeight;MIN=Math.min(W,H);
+  makeScenery();
+  assignTargets(buildTargets(input.value));
+}
+const FONT='"PingFang SC","Microsoft YaHei",sans-serif';
+
+function sampleMask(drawFn){
+  const oc=document.createElement('canvas');oc.width=W;oc.height=H;
+  const o=oc.getContext('2d');
+  o.clearRect(0,0,W,H);drawFn(o);
+  const img=o.getImageData(0,0,W,H).data;
+  const step=Math.max(2,Math.round(MIN/240));const pts=[];
+  for(let y=0;y<H;y+=step)for(let x=0;x<W;x+=step)
+    if(img[(y*W+x)*4+3]>128) pts.push({x,y});
+  return pts;
+}
+function heartPath(o,sc,cx,cy){
+  o.beginPath();
+  for(let a=0;a<=6.3001;a+=0.015){
+    const x=16*Math.pow(Math.sin(a),3);
+    const y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+    a===0?o.moveTo(cx+x*sc,cy+y*sc):o.lineTo(cx+x*sc,cy+y*sc);
+  }
+  o.closePath();
+}
+function capStride(pts,maxN){
+  if(pts.length<=maxN) return pts.slice();
+  const stride=Math.ceil(pts.length/maxN),out=[];
+  for(let i=0;i<pts.length;i+=stride) out.push(pts[i]);
+  return out;
+}
+const HCX=()=>W/2, HCY=()=>H*0.44, HSC=()=>Math.min(W/38,H/46);
+
+function mk(p,kind){
+  let hue,light,size,baseA;
+  if(kind==='name'){              // 名字：亮青白，在蓝心里跳出来
+    hue=185+Math.random()*15;light=90;size=Math.random()*1.0+1.4;baseA=0.95;
+  }else if(kind==='edge'){        // 爱心亮边
+    hue=195+Math.random()*20;light=72;size=Math.random()*1.2+1.7;baseA=0.92;
+  }else{                          // 爱心柔体
+    hue=210+Math.random()*20;light=58;size=Math.random()*0.9+0.9;baseA=0.55;
+  }
+  return {x:p.x,y:p.y,kind,hue,light,size,baseA};
+}
+// 同色系：爱心(边+体) + 名字 一起构建，编辑态/跳动态都用这套
+function buildTargets(name){
+  const cx=HCX(),cy=HCY(),sc=HSC();
+  const edge=capStride(sampleMask(o=>{heartPath(o,sc,cx,cy);
+    o.lineWidth=Math.max(4,MIN*0.022);o.strokeStyle='#fff';o.stroke();}),700);
+  const fill=capStride(sampleMask(o=>{heartPath(o,sc,cx,cy);
+    o.fillStyle='#fff';o.fill();}),1700);
+  const pts=[];
+  for(const p of edge) pts.push(mk(p,'edge'));
+  for(const p of fill) pts.push(mk(p,'fill'));
+  const nm=(name||'').trim()||' ';
+  const namePts=sampleMask(o=>{
+    o.fillStyle='#fff';o.textAlign='center';o.textBaseline='middle';
+    let fs=MIN*0.13;o.font='bold '+fs+'px '+FONT;
+    let tw=o.measureText(nm).width;
+    const maxW=Math.min(W*0.66,sc*20);
+    if(tw>maxW){fs=fs*maxW/tw;o.font='bold '+fs+'px '+FONT;}
+    o.fillText(nm,cx,cy-sc*1.6);
+  });
+  for(const p of namePts) pts.push(mk(p,'name'));
+  return pts;
+}
+function assignTargets(tg){
+  while(particles.length<tg.length){
+    const src=particles.length?particles[(Math.random()*particles.length)|0]:null;
+    particles.push({x:src?src.x:Math.random()*W,y:src?src.y:Math.random()*H,
+      vx:0,vy:0,ph:Math.random()*6.28,tx:0,ty:0,kind:'fill',
+      hue:210,light:55,size:1,baseA:0.5});
+  }
+  if(particles.length>tg.length) particles.length=tg.length;
+  for(let i=0;i<particles.length;i++){
+    const p=particles[i],t=tg[i];
+    p.tx=t.x;p.ty=t.y;p.kind=t.kind;p.hue=t.hue;p.light=t.light;p.size=t.size;p.baseA=t.baseA;
+  }
+}
+// 炸裂：所有粒子从中心向外迸发，随后被弹簧吸回目标位，形成炸开再重组
+function burst(strength){
+  const cx=HCX(), cy=HCY();
+  for(const p of particles){
+    const ang=Math.atan2(p.y-cy, p.x-cx) + (Math.random()-0.5)*0.9;
+    const sp=strength*(0.55+Math.random()*0.9);
+    p.vx+=Math.cos(ang)*sp;
+    p.vy+=Math.sin(ang)*sp;
+  }
+}
+function setBeat(){
+  mode='beat';
+  assignTargets(buildTargets(input.value));
+  hint.textContent='点击下方输入名字，结束编辑后粒子汇成跳动的心';
+}
+function setEdit(){
+  mode='edit';
+  assignTargets(buildTargets(input.value));
+  burst(20);   // 进入编辑：整颗心炸裂后重组为 爱心+名字
+  hint.textContent='按回车或点空白处 → 粒子汇成跳动的心';
+}
+resize_();addEventListener('resize',resize_);
+input.addEventListener('input',()=>{ assignTargets(buildTargets(input.value)); burst(8); });
+input.addEventListener('focus',setEdit);
+input.addEventListener('blur',setBeat);
+input.addEventListener('keydown',e=>{ if(e.key==='Enter') input.blur(); });
+canvas.addEventListener('click',()=>{ if(mode==='edit') setBeat(); });
+
+const mouse={x:-9999,y:-9999};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+addEventListener('mouseout',()=>{mouse.x=-9999;mouse.y=-9999;});
+
+function heartbeat(t){
+  const period=1100,p=(t%period)/period;
+  const b1=Math.exp(-Math.pow((p-0.10)/0.05,2));
+  const b2=Math.exp(-Math.pow((p-0.28)/0.05,2))*0.55;
+  return b1+b2;
+}
+
+function drawBase(t,beating){
+  const cx=W/2, baseCy=H*0.82;
+  const hb=beating?heartbeat(t):0;
+  const breath=1+hb*0.18;
+  // 发光底座椭圆
+  const g=ctx.createRadialGradient(cx,baseCy,0,cx,baseCy,W*0.32);
+  g.addColorStop(0,'rgba(170,225,255,0.55)');
+  g.addColorStop(0.4,'rgba(100,180,230,0.22)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(cx,baseCy,W*0.32*breath,H*0.08*breath,0,0,7);ctx.fill();
+  // 内圈亮核
+  const g2=ctx.createRadialGradient(cx,baseCy,0,cx,baseCy,W*0.14);
+  g2.addColorStop(0,'rgba(220,240,255,0.8)');
+  g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2;
+  ctx.beginPath();ctx.ellipse(cx,baseCy,W*0.14*breath,H*0.035*breath,0,0,7);ctx.fill();
+  // 旋转光柱
+  for(let i=0;i<10;i++){
+    const angle=(i/10)*Math.PI*2+t*0.0004;
+    const x0=cx+Math.cos(angle)*W*0.05;
+    const x1=cx+Math.cos(angle)*W*0.17;
+    const y0=baseCy-H*0.06;
+    const y1=H*0.5;
+    const lg=ctx.createLinearGradient(x0,y0,x1,y1);
+    lg.addColorStop(0,'rgba(150,210,255,'+(0.32+hb*0.28)+')');
+    lg.addColorStop(0.7,'rgba(150,210,255,0.08)');
+    lg.addColorStop(1,'rgba(150,210,255,0)');
+    ctx.strokeStyle=lg;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
+  }
+  // 底座周围的环上星点
+  for(let i=0;i<26;i++){
+    const angle=(i/26)*Math.PI*2+t*0.0005+i*0.1;
+    const r=W*0.22+Math.sin(t*0.002+i)*W*0.03;
+    const x=cx+Math.cos(angle)*r;
+    const y=baseCy+Math.sin(angle)*H*0.045;
+    const tw=0.3+0.6*Math.abs(Math.sin(t*0.003+i));
+    ctx.fillStyle='rgba(190,225,255,'+tw+')';
+    ctx.beginPath();ctx.arc(x,y,1.5+tw*1.5,0,7);ctx.fill();
+  }
+}
+
+function render(t){
+  const cx=HCX(), cy=HCY();
+  const beating = mode==='beat';
+  // 跳动态：所有粒子(含名字)一起缩放搏动；编辑态：保持静止便于阅读
+  const scale=beating?(1+0.09*heartbeat(t)):1;
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=glowGrad;ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  drawBase(t, beating);
+  for(const s of stars){
+    const tw=0.25+0.55*Math.abs(Math.sin(t*s.sp+s.ph));
+    s.y-=s.drift; if(s.y<0){s.y=H;s.x=Math.random()*W;}
+    ctx.fillStyle='hsla('+s.hue+',80%,80%,'+tw+')';
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();
+  }
+  for(const p of particles){
+    const sx=cx+(p.tx-cx)*scale, sy=cy+(p.ty-cy)*scale;
+    const dx=sx-p.x, dy=sy-p.y;
+    p.vx=(p.vx+dx*0.03)*0.72;
+    p.vy=(p.vy+dy*0.03)*0.72;
+    const mdx=p.x-mouse.x, mdy=p.y-mouse.y, d2=mdx*mdx+mdy*mdy;
+    if(d2<9000){const f=(9000-d2)/9000*5,d=Math.sqrt(d2)||1;p.vx+=mdx/d*f;p.vy+=mdy/d*f;}
+    p.x+=p.vx;p.y+=p.vy;
+    const glow=0.85+0.15*Math.sin(t*0.002+p.ph);
+    ctx.fillStyle='hsla('+p.hue+',100%,'+p.light+'%,'+(p.baseA*glow)+')';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+setBeat();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

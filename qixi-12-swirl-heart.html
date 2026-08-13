@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💜 旋转爱心粒子</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:#000;font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;}
+  .label{position:fixed;left:20px;bottom:16px;color:rgba(184,140,255,.88);
+    font-size:clamp(13px,2.4vw,16px);letter-spacing:3px;text-shadow:0 0 12px #b88cff;
+    pointer-events:none;font-weight:300;}
+  .title{position:fixed;left:0;right:0;top:7%;text-align:center;color:rgba(220,200,255,.9);
+    font-size:clamp(14px,2.6vw,17px);letter-spacing:5px;text-shadow:0 0 12px #b88cff;
+    pointer-events:none;font-weight:300;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="title">所 有 粒 子 · 都 在 向 你 靠 拢</div>
+<canvas id="c"></canvas>
+<div class="label" id="lb">你 的 女 朋 友</div>
+<script>
+const LABEL_TEXT='你 的 女 朋 友';
+const HUE_BASE=292, HUE_RANGE=30;  // 品红紫，浪漫爱心色（过曝后是粉紫而非惨白）
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();addEventListener('resize',resize);
+document.getElementById('lb').textContent=LABEL_TEXT;
+
+// ============ 底部旋转粒子环（椭圆轨道，带厚度） ============
+// 性能关键：绝不给大量粒子逐帧开 shadowBlur（会卡死），
+// 改用 globalCompositeOperation='lighter' 叠加发光。
+const baseRing=[];
+const RING_N=700;
+for(let i=0;i<RING_N;i++){
+  baseRing.push({
+    a:Math.random()*Math.PI*2,
+    rx:0.95+Math.random()*0.25,
+    ry:0.95+Math.random()*0.25,
+    layer:Math.random(),
+    speed:0.006+Math.random()*0.01,
+    size:0.4+Math.random()*1.4,
+    hue:HUE_BASE+Math.random()*15
+  });
+}
+
+// ============ 顶部爱心内部点（隐函数采样） ============
+const heartPts=[];
+for(let i=0;i<1300;i++){
+  const x=(Math.random()*2-1)*1.3;
+  const y=(Math.random()*2-1)*1.3;
+  const a=x*x+y*y-1;
+  if(a*a*a-x*x*y*y*y<=0){
+    heartPts.push({
+      nx:x,ny:y,
+      a:Math.random()*6.28,
+      orbitR:Math.random()*0.05,
+      orbitSpeed:(Math.random()-0.5)*0.012,
+      size:0.6+Math.random()*1.5,
+      depth:Math.random()*0.6+0.4,
+      hue:HUE_BASE+Math.random()*HUE_RANGE
+    });
+  }
+}
+
+// ============ 上升的流粒子 ============
+const stream=[];
+function spawnStream(){
+  const bp=baseRing[(Math.random()*baseRing.length)|0];
+  const hp=heartPts[(Math.random()*heartPts.length)|0];
+  stream.push({
+    bp,hp,
+    t:0,
+    speed:0.004+Math.random()*0.004,
+    size:0.4+Math.random()*1.1,
+    swirl:Math.random()*Math.PI*2,
+    swirlSpd:(Math.random()-0.5)*1.2,
+    hue:HUE_BASE+Math.random()*HUE_RANGE
+  });
+}
+
+// 心跳：整体放大缩小（咚-哒两下），不自转
+const startT=performance.now();
+function heartbeat(tt){
+  const p=(tt%1.05)/1.05;                              // 周期约 1.05 秒
+  const b1=Math.exp(-Math.pow((p-0.10)/0.05,2))*0.14; // 主跳
+  const b2=Math.exp(-Math.pow((p-0.28)/0.06,2))*0.09; // 次跳
+  return 1+b1+b2;
+}
+
+function render(){
+  // 拖尾（淡黑覆盖，叠加出辉光感）
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.fillRect(0,0,W,H);
+
+  const heartY=H*0.36, heartX=W/2, heartScale=Math.min(W,H)/15;
+  const baseY=H*0.82, baseX=W/2;
+  const baseRx=Math.min(W,H)*0.42, baseRy=baseRx*0.24;
+
+  for(const p of baseRing) p.a+=p.speed;
+
+  const beat=heartbeat((performance.now()-startT)/1000); // 心跳缩放因子
+  const effScale=heartScale*beat;
+
+  if(Math.random()<0.6) spawnStream();
+  if(stream.length>180) stream.splice(0,stream.length-180);
+
+  ctx.globalCompositeOperation='lighter';
+
+  // ====== 流粒子 ======
+  for(let i=stream.length-1;i>=0;i--){
+    const s=stream[i];
+    s.t+=s.speed;
+    if(s.t>=1){stream.splice(i,1);continue;}
+
+    const bx=baseX+Math.cos(s.bp.a)*baseRx*s.bp.rx;
+    const by=baseY+Math.sin(s.bp.a)*baseRy*s.bp.ry;
+
+    const hx=heartX+s.hp.nx*effScale;
+    const hy=heartY-s.hp.ny*effScale;
+
+    s.swirl+=s.swirlSpd*0.02;
+    const swirlR=Math.sin(s.t*Math.PI)*Math.min(W,H)*0.04;
+
+    const x=bx+(hx-bx)*s.t+Math.cos(s.swirl)*swirlR;
+    const y=by+(hy-by)*s.t+Math.sin(s.swirl)*swirlR*0.6;
+
+    const a=Math.sin(s.t*Math.PI)*0.8+0.1;
+    ctx.beginPath();
+    ctx.fillStyle=`hsla(${s.hue},100%,68%,${a})`;
+    ctx.arc(x,y,s.size,0,7);ctx.fill();
+  }
+
+  // ====== 底部旋转环 ======
+  for(const p of baseRing){
+    const x=baseX+Math.cos(p.a)*baseRx*p.rx;
+    const y=baseY+Math.sin(p.a)*baseRy*p.ry;
+    const a=0.45+p.layer*0.45;
+    ctx.beginPath();
+    ctx.fillStyle=`hsla(${p.hue},100%,${58+p.layer*8}%,${a})`;
+    ctx.arc(x,y,p.size,0,7);ctx.fill();
+  }
+
+  // ====== 顶部爱心 ======
+  for(const p of heartPts){
+    p.a+=p.orbitSpeed;
+    const ox=p.nx+Math.cos(p.a)*p.orbitR;
+    const oy=p.ny+Math.sin(p.a)*p.orbitR;
+    const x=heartX+ox*effScale;
+    const y=heartY-oy*effScale;
+    ctx.beginPath();
+    ctx.fillStyle=`hsla(${p.hue},100%,${56+p.depth*8}%,0.8)`;
+    ctx.arc(x,y,p.size,0,7);ctx.fill();
+  }
+
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

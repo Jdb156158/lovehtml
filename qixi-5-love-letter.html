@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💌 七夕 · 一封情书</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:radial-gradient(circle at 30% 20%,#3a0d52,#0b0118 75%);
+    font-family:"PingFang SC","Microsoft YaHei",serif;}
+  #c{position:fixed;inset:0;pointer-events:none;}
+  .wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .letter{max-width:640px;width:100%;color:#ffe0f0;line-height:2.1;
+    font-size:clamp(15px,2.6vw,19px);letter-spacing:1px;text-shadow:0 0 12px #ff5fa2aa;}
+  .letter .hi{font-size:clamp(22px,4vw,30px);color:#ff9ecb;letter-spacing:4px;margin-bottom:18px;
+    text-shadow:0 0 18px #ff5fa2;}
+  .letter .sign{margin-top:24px;text-align:right;color:#ffc2e0;font-style:italic;}
+  .cursor{display:inline-block;width:9px;height:1.1em;background:#ff7ab0;
+    vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite;box-shadow:0 0 8px #ff5fa2;}
+  @keyframes blink{50%{opacity:0;}}
+  .replay{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);
+    color:#ffb3d9;font-size:13px;letter-spacing:2px;opacity:0;transition:opacity .6s;
+    border:1px solid #ff5fa255;padding:8px 18px;border-radius:20px;cursor:pointer;
+    background:rgba(255,95,162,.08);}
+  .replay.show{opacity:.85;}
+  .replay:hover{background:rgba(255,95,162,.18);}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<canvas id="c"></canvas>
+<div class="wrap">
+  <div class="letter">
+    <div class="hi" id="hi"></div>
+    <div id="body"></div>
+    <div class="sign" id="sign"></div>
+  </div>
+</div>
+<div class="replay" id="replay">↺ 再读一遍</div>
+<script>
+// ===== 可自定义内容 =====
+const HI="亲爱的你：";
+const BODY=[
+  "今天是七夕，我想对你说一些藏了很久的话。",
+  "遇见你之前，我以为浪漫只是故事里的桥段；",
+  "遇见你之后，才懂每个寻常的黄昏都值得珍惜。",
+  "你笑的时候，世界好像都亮了一点。",
+  "不求轰轰烈烈，只愿岁岁年年，有你在身边。",
+  "这个七夕，把我最想说的话，都放进这颗心里——",
+  "我喜欢你，很喜欢的那种。"
+].join("\n");
+const SIGN="—— 想陪你过每一个七夕的人";
+// ========================
+
+const hiEl=document.getElementById('hi');
+const bodyEl=document.getElementById('body');
+const signEl=document.getElementById('sign');
+const replay=document.getElementById('replay');
+
+function typeText(el,text,speed,cb){
+  let i=0;
+  (function step(){
+    if(i<=text.length){
+      el.innerHTML=text.slice(0,i).replace(/\n/g,'<br>')+'<span class="cursor"></span>';
+      i++;
+      setTimeout(step, text[i-2]==='。'||text[i-2]==='，'?speed*6:speed);
+    } else {
+      el.innerHTML=text.replace(/\n/g,'<br>');
+      cb&&cb();
+    }
+  })();
+}
+
+function play(){
+  replay.classList.remove('show');
+  hiEl.innerHTML='';bodyEl.innerHTML='';signEl.innerHTML='';
+  typeText(hiEl,HI,90,()=>{
+    setTimeout(()=>{
+      typeText(bodyEl,BODY,55,()=>{
+        setTimeout(()=>{
+          typeText(signEl,SIGN,60,()=>{replay.classList.add('show');});
+        },500);
+      });
+    },400);
+  });
+}
+replay.addEventListener('click',play);
+
+// 背景飘心
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();addEventListener('resize',resize);
+const hs=[];
+function spawn(){hs.push({x:Math.random()*W,y:H+20,s:Math.random()*10+6,
+  vy:Math.random()*0.8+0.4,vx:(Math.random()-.5)*0.5,rot:Math.random()*6,
+  hue:Math.random()*40+335,a:Math.random()*0.5+0.3});}
+setInterval(spawn,500);
+function heartPath(ctx){ctx.beginPath();for(let a=0;a<=6.3;a+=0.05){
+  const x=16*Math.pow(Math.sin(a),3),y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+  a===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.closePath();}
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  for(let i=hs.length-1;i>=0;i--){const p=hs[i];p.y-=p.vy;p.x+=p.vx;p.rot+=0.01;
+    if(p.y<-30){hs.splice(i,1);continue;}
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.scale(p.s/16,p.s/16);ctx.globalAlpha=p.a;
+    ctx.fillStyle='hsl('+p.hue+',100%,70%)';
+      heartPath(ctx);ctx.fill();ctx.restore();}
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(loop);
+}
+loop();
+play();
+</script>
+</body>
+</html>

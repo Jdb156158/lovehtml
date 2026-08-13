@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❤ 七夕 · 跳动的心</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#3a0d52,#12001f 70%);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;cursor:pointer;}
+  #c{display:block;}
+  .title{position:fixed;left:0;right:0;top:7%;text-align:center;color:#fff;
+    font-size:clamp(22px,5vw,34px);letter-spacing:10px;text-shadow:0 0 24px #ff5fa2;
+    pointer-events:none;font-weight:300;}
+  .sub{position:fixed;left:0;right:0;top:calc(7% + 52px);text-align:center;color:#ffc2e0;
+    font-size:14px;letter-spacing:4px;opacity:.85;pointer-events:none;}
+  .tip{position:fixed;left:0;right:0;bottom:26px;text-align:center;color:#ffb3d9;
+    font-size:13px;letter-spacing:3px;opacity:.75;text-shadow:0 0 10px #ff5fa2;pointer-events:none;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="title">七 夕 快 乐</div>
+<div class="sub">愿有岁月可回首，且以深情共白头</div>
+<canvas id="c"></canvas>
+<div class="tip">为你跳动 ❤ 点击屏幕，撒下更多爱心</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();addEventListener('resize',resize);
+
+function heartPath(ctx){
+  ctx.beginPath();
+  for(let a=0;a<=Math.PI*2+0.02;a+=0.02){
+    const x=16*Math.pow(Math.sin(a),3);
+    const y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+    a===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+}
+
+const floats=[];
+function spawn(x,y){
+  floats.push({x,y,vx:(Math.random()-.5)*1.6,vy:Math.random()*-1.6-0.6,
+    size:Math.random()*9+7,rot:(Math.random()-.5)*0.4,hue:Math.random()*40+335,
+    life:1,decay:Math.random()*0.006+0.003});
+}
+// 自动飘出小爱心
+setInterval(()=>{
+  for(let i=0;i<2;i++) spawn(Math.random()*W, H+20);
+},260);
+
+addEventListener('click',e=>{
+  for(let i=0;i<22;i++) spawn(e.clientX+(Math.random()-.5)*40, e.clientY+(Math.random()-.5)*40);
+});
+
+function render(time){
+  const t=time/1000;
+  ctx.clearRect(0,0,W,H);
+  const beat=1+Math.sin(t*3)*0.05+Math.sin(t*1.4)*0.035;
+  const cx=W/2, cy=H/2+10;
+  const base=Math.min(W,H)/24;
+
+  // 中心大爱心（发光）
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.scale(base*beat,base*beat);
+  const grad=ctx.createLinearGradient(0,-16,0,16);
+  grad.addColorStop(0,'#ff9ecb');
+  grad.addColorStop(.5,'#ff3d8b');
+  grad.addColorStop(1,'#c0166a');
+  ctx.shadowColor='rgba(255,90,170,.9)';
+  ctx.shadowBlur=55*beat;
+  ctx.fillStyle=grad;
+  heartPath(ctx); ctx.fill();
+  ctx.shadowBlur=0;
+  // 高光
+  ctx.fillStyle='rgba(255,255,255,.18)';
+  ctx.beginPath();ctx.ellipse(-5,-6,3.2,5,0.3,0,7);ctx.fill();
+  ctx.restore();
+
+  ctx.globalCompositeOperation='lighter';
+  // 浮动小爱心
+  for(let i=floats.length-1;i>=0;i--){
+    const p=floats[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.004; p.rot+=0.01; p.life-=p.decay;
+    if(p.life<=0||p.y<-30){floats.splice(i,1);continue;}
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    ctx.scale(p.size/16,p.size/16);
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle='hsl('+p.hue+',100%,72%)';
+      heartPath(ctx); ctx.fill();
+      ctx.restore();
+  }
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❤ 李峋同款爱心</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:#000;
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;}
+  .center{position:fixed;left:0;right:0;top:50%;transform:translateY(-50%);
+    text-align:center;color:#ff5e8a;pointer-events:none;
+    font-size:clamp(18px,4.5vw,28px);letter-spacing:3px;
+    text-shadow:0 0 16px #ff2d6b;font-weight:300;line-height:1.7;}
+  .tip{position:fixed;left:0;right:0;bottom:22px;text-align:center;color:#ff9ec0;
+    font-size:12px;letter-spacing:2px;opacity:.7;pointer-events:none;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="center" id="txt">李 峋<br>我 爱 你 (づ¯3¯)づ╭❤~</div>
+<canvas id="c"></canvas>
+<div class="tip">把下面的名字改成 TA 的名字，再发给 TA 💌</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}resize();addEventListener('resize',resize);
+
+const heartPts=[];
+for(let a=0;a<Math.PI*2;a+=0.08){
+  const x=16*Math.pow(Math.sin(a),3);
+  const y=-(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a));
+  heartPts.push({x,y});
+}
+const particles=[];
+function spawn(){
+  const p=heartPts[(Math.random()*heartPts.length)|0];
+  const cx=W/2,cy=H/2,sc=Math.min(W,H)/30;
+  const ox=cx+p.x*sc, oy=cy+p.y*sc;
+  const ang=Math.random()*6.28, sp=Math.random()*3+1.5;
+  particles.push({x:ox,y:oy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-1,
+    life:1,decay:Math.random()*0.012+0.006,size:Math.random()*2.4+1.4,
+    hue:Math.random()<0.5?345:5});
+}
+let frame=0;
+function render(){
+  frame++;
+  ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  if(frame%2===0) for(let i=0;i<6;i++) spawn();
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.03;p.vx*=0.99;p.vy*=0.99;
+    p.life-=p.decay;
+    if(p.life<=0){particles.splice(i,1);continue;}
+    ctx.beginPath();
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle='hsl('+p.hue+',100%,'+(60+p.life*20)+'%)';
+    ctx.arc(p.x,p.y,p.size*p.life+0.8,0,7);ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(render);
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌹 送你一朵玫瑰</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow:hidden;background:radial-gradient(circle at 50% 30%,#2a0a1e,#0a0008 75%);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;}
+  #c{display:block;}
+  .title{position:fixed;left:0;right:0;top:9%;text-align:center;color:#ffd9e6;
+    font-size:clamp(18px,4.2vw,26px);letter-spacing:5px;text-shadow:0 0 18px #ff5fa2;
+    pointer-events:none;font-weight:300;}
+  .tip{position:fixed;left:0;right:0;bottom:24px;text-align:center;color:#ffb3cf;
+    font-size:12px;letter-spacing:2px;opacity:.7;pointer-events:none;}
+</style>
+</head>
+<body>
+<script>window.onerror=function(m,s,l,c){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;right:0;padding:10px 14px;background:#c0392b;color:#fff;font:13px/1.5 monospace;z-index:99999;white-space:pre-wrap;word-break:break-all';d.textContent='⚠ 出错: '+m+'  @行'+l+':'+c;document.body.appendChild(d);};</script>
+
+<div class="title">送 你 一 朵 玫 瑰 · 只 为 你 盛 开</div>
+<canvas id="c"></canvas>
+<div class="tip">用数学画一朵花，献给独一无二的你 🌹</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H,cx,cy,scale;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;
+  cx=W/2;cy=H/2-20;scale=Math.min(W,H)/9;}
+resize();addEventListener('resize',resize);
+
+// 经典数学玫瑰曲线
+const PATH=[];
+for(let i=0;i<=2000;i++){
+  const t=i/2000*Math.PI*12;
+  const k=Math.exp(Math.cos(t))-2*Math.cos(4*t)-Math.pow(Math.sin(t/13),5);
+  PATH.push({x:Math.sin(t)*k, y:-Math.cos(t)*k});
+}
+const sparks=[];
+function render(time){
+  const t=time/1000;
+  ctx.fillStyle='rgba(10,0,8,0.25)';ctx.fillRect(0,0,W,H);
+
+  // 茎与叶
+  ctx.save();
+  ctx.strokeStyle='rgba(80,200,120,0.5)';ctx.lineWidth=4;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+scale*4.2);ctx.stroke();
+  ctx.fillStyle='rgba(80,200,120,0.45)';
+  ctx.beginPath();ctx.ellipse(cx+scale*0.9,cy+scale*3,scale*0.9,scale*0.4,-0.5,0,7);ctx.fill();
+  ctx.restore();
+
+  // 玫瑰（呼吸 + 旋转）
+  const bloom=0.82+Math.sin(t*1.2)*0.08;
+  const rot=Math.sin(t*0.3)*0.12;
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(rot);
+  ctx.scale(scale*bloom,scale*bloom);
+  ctx.beginPath();
+  PATH.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  ctx.closePath();
+  const g=ctx.createRadialGradient(0,0,0.2,0,0,4);
+  g.addColorStop(0,'#ffd1e8');
+  g.addColorStop(0.4,'#ff7ab0');
+  g.addColorStop(1,'#d61f63');
+  ctx.fillStyle=g;ctx.shadowColor='#ff4f9a';ctx.shadowBlur=30;
+  ctx.fill();
+  ctx.lineWidth=0.12;ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.stroke();
+  ctx.restore();
+
+  // 漂浮光点
+  if(Math.random()<0.3){
+    const a=Math.random()*6.28,r=Math.random()*scale*3;
+    sparks.push({x:cx+Math.cos(a)*r*0.6,y:cy+Math.sin(a)*r*0.6,
+      vy:-Math.random()*0.6-0.2,life:1,hue:Math.random()*40+330});
+  }
+  for(let i=sparks.length-1;i>=0;i--){
+    const s=sparks[i];s.y+=s.vy;s.life-=0.01;
+    if(s.life<=0){sparks.splice(i,1);continue;}
+    ctx.beginPath();ctx.globalAlpha=s.life;
+    ctx.fillStyle='hsl('+s.hue+',100%,75%)';
+    ctx.arc(s.x,s.y,1.6,0,7);ctx.fill();ctx.globalAlpha=1;
+  }
+  requestAnimationFrame(render);
+}
+render(0);
+</script>
+</body>
+</html>
