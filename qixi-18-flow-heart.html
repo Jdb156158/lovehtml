@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流光粒子心 · qixi-18</title>
+<script>
+window.onerror=function(m,s,l){var d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c00;color:#fff;font:13px/1.5 monospace;padding:8px 12px;white-space:pre-wrap';document.body.appendChild(d);}d.textContent='⚠ 运行错误：'+(m||'')+' @行'+(l||'');};
+</script>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 45%,#1a0033 0%,#0a0014 70%,#05000a 100%);}
+  canvas{display:block;}
+  .tip{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);color:#ff9ad2;font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.7;letter-spacing:1px;pointer-events:none;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">粒子流光汇聚成心 · 心跳脉动</div>
+<script>
+(function(){
+  const c=document.getElementById('c');
+  const a=c.getContext('2d');
+  let O,Q,cx,cy,h=[],e=[],v=34,time=0;
+  const Y=6.3;
+  function resize(){
+    O=c.width=innerWidth; Q=c.height=innerHeight;
+    cx=O/2; cy=Q/2;
+    const sc=Math.min(O,Q)/1080;
+    h=[];
+    for(let i=0;i<Y;i+=0.18){
+      h.push([
+        cx + 160*sc*Math.pow(Math.sin(i),3),
+        cy - 9*sc*(-(15*Math.cos(i)-5*Math.cos(2*i)-2*Math.cos(3*i)-Math.cos(4*i)))
+      ]);
+    }
+  }
+  const R=Math.random;
+  function init(){
+    e=[];
+    for(let i=0;i<v;i++){
+      const x=R()*O, y=R()*Q;
+      const H=300+R()*60; // 粉紫色相
+      const f=[];
+      for(let k=0;k<v;k++){
+        f.push({x:x,y:y,X:0,Y:0,R:(1-k/v)*1.4+0.8,S:R()+1.2,q:~~(R()*h.length),D:i%2*2-1,F:R()*0.18+0.78});
+      }
+      e[i]={pts:f,hue:H};
+    }
+  }
+  function render(p,hue){
+    a.fillStyle='hsla('+hue+',100%,62%,0.5)';
+    a.beginPath(); a.arc(p.x,p.y,p.R,0,6.3,1); a.closePath(); a.fill();
+  }
+  function loop(){
+    a.clearRect(0,0,O,Q);
+    a.globalCompositeOperation='lighter';
+    time+=0.045;
+    const beat=1+0.07*(0.5+0.5*Math.sin(time*2));
+    const ht=h.map(p=>[cx+(p[0]-cx)*beat, cy+(p[1]-cy)*beat]);
+    for(let i=0;i<v;i++){
+      const f=e[i].pts, hue=e[i].hue, u=f[0];
+      const q=ht[u.q];
+      const D=u.x-q[0], E=u.y-q[1], G=Math.sqrt(D*D+E*E)||1;
+      if(G<10){
+        if(R()>0.95) u.q=~~(R()*h.length);
+        else { if(R()>0.99) u.D*=-1; u.q+=u.D; u.q%=h.length; if(u.q<0)u.q+=h.length; }
+      }
+      u.X+= -D/G*u.S; u.Y+= -E/G*u.S;
+      u.x+=u.X; u.y+=u.Y; render(u,hue);
+      u.X*=u.F; u.Y*=u.F;
+      for(let k=0;k<v-1;k++){
+        const T=f[k], N=f[k+1];
+        N.x-=(N.x-T.x)*0.7; N.y-=(N.y-T.y)*0.7;
+        render(N,hue);
+      }
+    }
+    a.globalCompositeOperation='source-over';
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',()=>{resize();init();});
+  resize(); init();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

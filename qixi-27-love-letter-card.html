@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>💕 致最爱的你 💕</title>
+<style>
+  :root{
+    --rose-deep:#b5002a;--rose-hot:#e6003a;--rose-soft:#ff4d6d;--rose-blush:#ff8fa3;
+    --rose-light:#ffb3c1;--rose-pale:#ffd6e0;--cream:#fff0f3;--gold:#d4a017;
+    --gold-light:#f0d060;--wine:#6b0020;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:radial-gradient(ellipse at 30% 20%,#2a0010 0%,#1a0008 40%,#0d0004 100%);
+    min-height:100vh;overflow-x:hidden;
+    font-family:"Songti SC","SimSun","Noto Serif SC",serif;color:var(--cream);
+    cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><text y='20' font-size='20'>💗</text></svg>") 12 12,auto;
+  }
+  .hearts-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;}
+  .floating-heart{position:absolute;bottom:-80px;animation:floatUp linear infinite;opacity:0;filter:blur(0.5px);}
+  @keyframes floatUp{0%{transform:translateY(0) rotate(0) scale(.5);opacity:0;}10%{opacity:.7;}50%{opacity:.5;}90%{opacity:.2;}100%{transform:translateY(-110vh) rotate(360deg) scale(1.2);opacity:0;}}
+  .big-heart-container{position:fixed;pointer-events:none;z-index:1;animation:pulseGlow 2s ease-in-out infinite;}
+  .big-heart-1{top:10%;left:5%;}.big-heart-2{top:60%;right:3%;}.big-heart-3{bottom:15%;left:15%;}.big-heart-4{top:25%;right:12%;}
+  @keyframes pulseGlow{0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(255,77,109,.4));}50%{transform:scale(1.15);filter:drop-shadow(0 0 40px rgba(255,77,109,.8));}}
+  .big-heart-svg{width:100px;height:100px;fill:var(--rose-hot);opacity:.15;}
+  .big-heart-2 .big-heart-svg{width:140px;height:140px;fill:var(--rose-deep);}
+  .big-heart-3 .big-heart-svg{width:80px;height:80px;fill:var(--rose-blush);}
+  .big-heart-4 .big-heart-svg{width:60px;height:60px;fill:var(--rose-soft);}
+  .sparkle{position:fixed;width:4px;height:4px;background:var(--gold-light);border-radius:50%;pointer-events:none;z-index:2;animation:sparkleAnim 3s ease-in-out infinite;}
+  @keyframes sparkleAnim{0%,100%{opacity:0;transform:scale(0);}50%{opacity:1;transform:scale(1);}}
+  .main-content{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem;}
+  .hero{text-align:center;padding:4rem 2rem;animation:fadeInUp 1.5s ease-out;}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(60px);}to{opacity:1;transform:translateY(0);}}
+  .hero-title{font-family:"STKaiti","KaiTi","Songti SC",cursive;font-size:clamp(3rem,10vw,7rem);
+    background:linear-gradient(135deg,var(--rose-light),var(--gold-light),var(--rose-blush));
+    -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 30px rgba(255,77,109,.3));line-height:1.2;animation:titleShimmer 4s ease-in-out infinite;}
+  @keyframes titleShimmer{0%,100%{filter:drop-shadow(0 0 30px rgba(255,77,109,.3)) brightness(1);}50%{filter:drop-shadow(0 0 50px rgba(255,77,109,.6)) brightness(1.1);}}
+  .hero-subtitle{font-style:italic;font-size:clamp(1rem,3vw,1.6rem);color:var(--rose-blush);margin-top:1rem;opacity:0;animation:fadeInUp 1.5s ease-out .5s forwards;letter-spacing:2px;}
+  .hero-date{font-size:1rem;color:var(--gold);margin-top:.8rem;letter-spacing:6px;opacity:0;animation:fadeInUp 1.5s ease-out .8s forwards;}
+  .mega-heart-section{position:relative;margin:3rem 0;display:flex;justify-content:center;align-items:center;}
+  .mega-heart{width:clamp(200px,40vw,350px);height:clamp(200px,40vw,350px);animation:megaBeat 1.2s ease-in-out infinite;filter:drop-shadow(0 0 60px rgba(230,0,58,.6));cursor:pointer;position:relative;z-index:5;}
+  .mega-heart:hover{animation:megaBeatFast .4s ease-in-out infinite;}
+  @keyframes megaBeat{0%{transform:scale(1);}15%{transform:scale(1.15);}30%{transform:scale(1);}45%{transform:scale(1.1);}60%{transform:scale(1);}100%{transform:scale(1);}}
+  @keyframes megaBeatFast{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
+  .mega-heart-ring{position:absolute;border:2px solid var(--rose-soft);border-radius:50%;opacity:0;animation:ringPulse 3s ease-out infinite;}
+  .mega-heart-ring:nth-child(1){width:300px;height:300px;}.mega-heart-ring:nth-child(2){width:400px;height:400px;animation-delay:1s;}.mega-heart-ring:nth-child(3){width:500px;height:500px;animation-delay:2s;}
+  @keyframes ringPulse{0%{transform:scale(.5);opacity:.6;}100%{transform:scale(1.5);opacity:0;}}
+  .lovers-section{position:relative;margin:2rem 0 4rem;text-align:center;}
+  .lovers-scene{position:relative;width:clamp(320px,90vw,700px);height:420px;margin:0 auto;display:flex;justify-content:center;align-items:flex-end;}
+  .door-scene{position:relative;width:100%;height:100%;}
+  .door-frame{position:absolute;bottom:40px;width:100px;height:200px;border-radius:50px 50px 0 0;overflow:hidden;}
+  .door-frame-left{left:8%;}.door-frame-right{right:8%;}
+  .door-back{width:100%;height:100%;background:linear-gradient(180deg,#1a0008,#0d0004);border:2px solid var(--rose-deep);border-radius:50px 50px 0 0;position:relative;}
+  .door-back::after{content:'';position:absolute;top:50%;width:10px;height:10px;background:var(--gold);border-radius:50%;box-shadow:0 0 8px var(--gold);}
+  .door-frame-left .door-back::after{right:12px;}.door-frame-right .door-back::after{left:12px;}
+  .door-panel{position:absolute;top:0;width:100%;height:100%;background:linear-gradient(135deg,var(--rose-deep),var(--wine));border:2px solid rgba(255,77,109,.4);border-radius:50px 50px 0 0;z-index:2;transition:transform 1.5s ease-in-out;}
+  .door-frame-left .door-panel{transform-origin:left center;animation:openDoorLeft 2s ease-in-out .5s forwards;}
+  .door-frame-right .door-panel{transform-origin:right center;animation:openDoorRight 2s ease-in-out .5s forwards;}
+  @keyframes openDoorLeft{0%{transform:perspective(600px) rotateY(0);}100%{transform:perspective(600px) rotateY(-110deg);}}
+  @keyframes openDoorRight{0%{transform:perspective(600px) rotateY(0);}100%{transform:perspective(600px) rotateY(110deg);}}
+  .door-light{position:absolute;bottom:40px;width:120px;height:210px;border-radius:60px 60px 0 0;opacity:0;}
+  .door-light-left{left:6%;background:radial-gradient(ellipse at center,rgba(255,200,100,.3),transparent 70%);animation:lightReveal 2s ease-in-out .8s forwards;}
+  .door-light-right{right:6%;background:radial-gradient(ellipse at center,rgba(255,150,180,.3),transparent 70%);animation:lightReveal 2s ease-in-out .8s forwards;}
+  @keyframes lightReveal{0%{opacity:0;}100%{opacity:1;}}
+  .character{position:absolute;bottom:40px;z-index:5;opacity:0;}
+  .char-left{left:10%;animation:walkFromLeft 3s ease-in-out 2s forwards;}
+  .char-right{right:10%;animation:walkFromRight 3s ease-in-out 2s forwards;}
+  @keyframes walkFromLeft{0%{left:10%;opacity:0;transform:scale(.9);}20%{opacity:1;transform:scale(1);}100%{left:calc(50% - 65px);opacity:1;transform:scale(1);}}
+  @keyframes walkFromRight{0%{right:10%;opacity:0;transform:scale(.9);}20%{opacity:1;transform:scale(1);}100%{right:calc(50% - 65px);opacity:1;transform:scale(1);}}
+  .char-left{animation:walkFromLeft 3s ease-in-out 2s forwards,hugBounceLeft 2s ease-in-out 5s forwards;}
+  .char-right{animation:walkFromRight 3s ease-in-out 2s forwards,hugBounceRight 2s ease-in-out 5s forwards;}
+  @keyframes hugBounceLeft{0%{transform:scale(1) rotate(0);}40%{transform:scale(1.05) rotate(-3deg);}100%{transform:scale(1) rotate(-2deg);}}
+  @keyframes hugBounceRight{0%{transform:scale(1) rotate(0);}40%{transform:scale(1.05) rotate(3deg);}100%{transform:scale(1) rotate(2deg);}}
+  .hug-hearts{position:absolute;top:30%;left:50%;transform:translateX(-50%);z-index:10;pointer-events:none;}
+  .hug-heart{position:absolute;font-size:1.5rem;opacity:0;animation:hugHeartBurst 3s ease-out 5.2s forwards;}
+  .hug-heart:nth-child(1){--angle:0deg;--dist:80px;font-size:2rem;}.hug-heart:nth-child(2){--angle:30deg;--dist:100px;}.hug-heart:nth-child(3){--angle:60deg;--dist:70px;font-size:1.8rem;}.hug-heart:nth-child(4){--angle:90deg;--dist:110px;}.hug-heart:nth-child(5){--angle:120deg;--dist:90px;font-size:2.2rem;}.hug-heart:nth-child(6){--angle:150deg;--dist:85px;}.hug-heart:nth-child(7){--angle:180deg;--dist:95px;font-size:1.6rem;}.hug-heart:nth-child(8){--angle:210deg;--dist:75px;}.hug-heart:nth-child(9){--angle:240deg;--dist:105px;font-size:1.3rem;}.hug-heart:nth-child(10){--angle:270deg;--dist:80px;font-size:2rem;}.hug-heart:nth-child(11){--angle:300deg;--dist:115px;}.hug-heart:nth-child(12){--angle:330deg;--dist:90px;font-size:1.7rem;}
+  @keyframes hugHeartBurst{0%{transform:translate(0,0) scale(0);opacity:0;}30%{opacity:1;transform:translate(calc(cos(var(--angle))*var(--dist)*.5),calc(sin(var(--angle))*var(--dist)*.5)) scale(1.3);}100%{opacity:0;transform:translate(calc(cos(var(--angle))*var(--dist)),calc(sin(var(--angle))*var(--dist) - 50px)) scale(.5);}}
+  .after-hug-hearts{position:absolute;top:10%;left:50%;transform:translateX(-50%);z-index:10;pointer-events:none;}
+  .float-heart-after{position:absolute;opacity:0;animation:floatAfterHug 4s ease-out infinite;}
+  .float-heart-after:nth-child(1){left:-10px;font-size:1.5rem;animation-delay:6s;}.float-heart-after:nth-child(2){left:15px;font-size:2rem;animation-delay:6.8s;}.float-heart-after:nth-child(3){left:-25px;font-size:1.2rem;animation-delay:7.5s;}.float-heart-after:nth-child(4){left:5px;font-size:1.8rem;animation-delay:7s;}.float-heart-after:nth-child(5){left:-15px;font-size:2.3rem;animation-delay:8s;}
+  @keyframes floatAfterHug{0%{transform:translateY(0) scale(.5);opacity:0;}15%{opacity:1;transform:translateY(-20px) scale(1);}100%{opacity:0;transform:translateY(-180px) scale(.3) translateX(20px);}}
+  .meeting-glow{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(255,77,109,.4),transparent 70%);border-radius:50%;opacity:0;z-index:4;animation:meetingGlow 1s ease-out 4.8s forwards,meetingPulse 2s ease-in-out 5.8s infinite;}
+  @keyframes meetingGlow{0%{opacity:0;transform:translateX(-50%) scale(.3);}100%{opacity:1;transform:translateX(-50%) scale(1);}}
+  @keyframes meetingPulse{0%,100%{transform:translateX(-50%) scale(1);opacity:.6;}50%{transform:translateX(-50%) scale(1.3);opacity:1;}}
+  .ground{position:absolute;bottom:38px;left:5%;width:90%;height:3px;background:linear-gradient(90deg,transparent,var(--rose-deep),var(--rose-soft),var(--rose-deep),transparent);border-radius:50%;filter:blur(2px);}
+  .petals-container{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;}
+  .petal{position:absolute;top:-20px;width:15px;height:12px;background:var(--rose-soft);border-radius:50% 0 50% 50%;opacity:.6;animation:petalFall linear infinite;}
+  @keyframes petalFall{0%{transform:translateY(0) rotate(0) translateX(0);opacity:.7;}25%{transform:translateY(100px) rotate(90deg) translateX(30px);}50%{transform:translateY(200px) rotate(180deg) translateX(-20px);}75%{transform:translateY(300px) rotate(270deg) translateX(15px);}100%{transform:translateY(420px) rotate(360deg) translateX(-10px);opacity:0;}}
+  .love-message{max-width:700px;text-align:center;padding:3rem 2rem;background:linear-gradient(135deg,rgba(181,0,42,.1),rgba(107,0,32,.2));border:1px solid rgba(255,77,109,.2);border-radius:30px;backdrop-filter:blur(10px);position:relative;overflow:hidden;opacity:0;animation:fadeInUp 1.5s ease-out 1.2s forwards;}
+  .love-message::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(255,77,109,.05),transparent,rgba(212,160,23,.05),transparent);animation:rotateBg 10s linear infinite;}
+  @keyframes rotateBg{to{transform:rotate(360deg);}}
+  .love-message p{position:relative;z-index:2;font-size:clamp(1.1rem,2.5vw,1.35rem);line-height:2.2;color:#fff;letter-spacing:.3px;text-shadow:0 1px 8px rgba(0,0,0,.4);}
+  .love-message .signature{font-family:"STKaiti","KaiTi",cursive;font-size:2rem;color:var(--gold);margin-top:1.5rem;display:block;}
+  .click-heart{position:fixed;pointer-events:none;font-size:2rem;z-index:1000;animation:clickHeartAnim 1.5s ease-out forwards;}
+  @keyframes clickHeartAnim{0%{transform:scale(0) rotate(0);opacity:1;}50%{transform:scale(1.5) rotate(20deg);opacity:.8;}100%{transform:scale(0) rotate(-20deg) translateY(-100px);opacity:0;}}
+  .footer{text-align:center;padding:3rem 2rem;opacity:0;animation:fadeInUp 1.5s ease-out 2.4s forwards;}
+  .footer-hearts{font-size:2rem;letter-spacing:8px;animation:pulseGlow 2s ease-in-out infinite;display:inline-block;}
+  .footer p{font-family:"STKaiti","KaiTi",cursive;font-size:1.5rem;color:var(--rose-blush);margin-top:1rem;}
+  @media(max-width:600px){.lovers-scene{height:380px;}.door-frame{width:75px;height:160px;}.mega-heart{width:180px;height:180px;}.character svg{width:65px;}}
+</style>
+</head>
+<body>
+<div class="hearts-container" id="heartsContainer"></div>
+<div class="big-heart-container big-heart-1"><svg class="big-heart-svg" viewBox="0 0 100 100"><path d="M50 88 C25 65,0 45,0 28 C0 12,12 0,25 0 C35 0,45 8,50 18 C55 8,65 0,75 0 C88 0,100 12,100 28 C100 45,75 65,50 88Z"/></svg></div>
+<div class="big-heart-container big-heart-2" style="animation-delay:.6s;"><svg class="big-heart-svg" viewBox="0 0 100 100"><path d="M50 88 C25 65,0 45,0 28 C0 12,12 0,25 0 C35 0,45 8,50 18 C55 8,65 0,75 0 C88 0,100 12,100 28 C100 45,75 65,50 88Z"/></svg></div>
+<div class="big-heart-container big-heart-3" style="animation-delay:1.2s;"><svg class="big-heart-svg" viewBox="0 0 100 100"><path d="M50 88 C25 65,0 45,0 28 C0 12,12 0,25 0 C35 0,45 8,50 18 C55 8,65 0,75 0 C88 0,100 12,100 28 C100 45,75 65,50 88Z"/></svg></div>
+<div class="big-heart-container big-heart-4" style="animation-delay:1.8s;"><svg class="big-heart-svg" viewBox="0 0 100 100"><path d="M50 88 C25 65,0 45,0 28 C0 12,12 0,25 0 C35 0,45 8,50 18 C55 8,65 0,75 0 C88 0,100 12,100 28 C100 45,75 65,50 88Z"/></svg></div>
+<div id="sparkles"></div>
+<div class="main-content">
+  <section class="hero">
+    <h1 class="hero-title">致 最爱的你</h1>
+    <p class="hero-subtitle">爱是唯一，不畏季节的花</p>
+    <p class="hero-date">✦ 七夕 · 2026 ✦</p>
+  </section>
+  <section class="mega-heart-section">
+    <div class="mega-heart-ring"></div><div class="mega-heart-ring"></div><div class="mega-heart-ring"></div>
+    <svg class="mega-heart" viewBox="0 0 100 100" id="megaHeart">
+      <defs><radialGradient id="heartGrad" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#ff6b8a"/><stop offset="50%" stop-color="#e6003a"/><stop offset="100%" stop-color="#8b0020"/></radialGradient></defs>
+      <path fill="url(#heartGrad)" d="M50 88 C25 65,0 45,0 28 C0 12,12 0,25 0 C35 0,45 8,50 18 C55 8,65 0,75 0 C88 0,100 12,100 28 C100 45,75 65,50 88Z"/>
+    </svg>
+  </section>
+  <section class="lovers-section">
+    <div class="lovers-scene">
+      <div class="petals-container" id="petalsContainer"></div>
+      <div class="door-scene">
+        <div class="door-light door-light-left"></div>
+        <div class="door-frame door-frame-left"><div class="door-back"></div><div class="door-panel"></div></div>
+        <div class="door-light door-light-right"></div>
+        <div class="door-frame door-frame-right"><div class="door-back"></div><div class="door-panel"></div></div>
+        <div class="character char-left"><svg width="80" height="200" viewBox="0 0 80 200"><defs><linearGradient id="dressGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e6003a"/><stop offset="100%" stop-color="#8b0020"/></linearGradient><radialGradient id="skin1" cx="50%" cy="40%" r="50%"><stop offset="0%" stop-color="#ffcdb2"/><stop offset="100%" stop-color="#e5989b"/></radialGradient></defs><ellipse cx="40" cy="28" rx="18" ry="22" fill="url(#skin1)"/><path d="M22 22 C20 8,32 2,42 2 C52 2,62 8,60 22 C62 30,64 45,62 55 C60 50,55 40,55 30 C50 20,30 20,25 30 C25 40,20 50,18 55 C16 45,18 30,22 22Z" fill="#3d0012"/><rect x="34" y="46" width="12" height="14" rx="5" fill="url(#skin1)"/><path d="M25 58 C20 80,10 140,5 190 L75 190 C70 140,60 80,55 58 Z" fill="url(#dressGrad)"/><path d="M28 65 C18 70,12 80,10 90" stroke="url(#skin1)" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M52 65 C62 70,68 80,70 90" stroke="url(#skin1)" stroke-width="10" stroke-linecap="round" fill="none"/><line x1="30" y1="185" x2="28" y2="200" stroke="#6b0020" stroke-width="8" stroke-linecap="round"/><line x1="50" y1="185" x2="52" y2="200" stroke="#6b0020" stroke-width="8" stroke-linecap="round"/></svg></div>
+        <div class="character char-right"><svg width="85" height="200" viewBox="0 0 85 200"><defs><linearGradient id="suitGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#2a1020"/><stop offset="100%" stop-color="#15000d"/></linearGradient><radialGradient id="skin2" cx="50%" cy="40%" r="50%"><stop offset="0%" stop-color="#ffcdb2"/><stop offset="100%" stop-color="#dba398"/></radialGradient></defs><ellipse cx="42" cy="28" rx="20" ry="23" fill="url(#skin2)"/><path d="M22 20 C20 6,34 0,44 0 C54 0,66 6,64 20 C62 15,52 10,42 10 C32 10,24 15,22 20Z" fill="#1a0008"/><rect x="36" y="47" width="14" height="15" rx="6" fill="url(#skin2)"/><path d="M20 60 C18 80,15 140,12 190 L73 190 C70 140,67 80,65 60 Z" fill="url(#suitGrad)"/><path d="M38 62 L42 90 L35 92 Z" fill="rgba(255,255,255,.06)"/><path d="M47 62 L43 90 L50 92 Z" fill="rgba(255,255,255,.06)"/><path d="M41 62 L43 62 L44 85 L42 88 L40 85 Z" fill="#e6003a"/><path d="M22 68 C12 73,6 83,4 93" stroke="url(#skin2)" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M63 68 C73 73,79 83,81 93" stroke="url(#skin2)" stroke-width="11" stroke-linecap="round" fill="none"/><line x1="32" y1="185" x2="30" y2="200" stroke="#0d0005" stroke-width="9" stroke-linecap="round"/><line x1="53" y1="185" x2="55" y2="200" stroke="#0d0005" stroke-width="9" stroke-linecap="round"/></svg></div>
+        <div class="meeting-glow"></div>
+        <div class="hug-hearts"><span class="hug-heart">💗</span><span class="hug-heart">❤️</span><span class="hug-heart">💕</span><span class="hug-heart">💖</span><span class="hug-heart">💝</span><span class="hug-heart">💓</span><span class="hug-heart">🩷</span><span class="hug-heart">♥️</span><span class="hug-heart">💗</span><span class="hug-heart">💘</span><span class="hug-heart">❤️</span><span class="hug-heart">💕</span></div>
+        <div class="after-hug-hearts"><span class="float-heart-after">💗</span><span class="float-heart-after">❤️</span><span class="float-heart-after">💕</span><span class="float-heart-after">💖</span><span class="float-heart-after">💝</span></div>
+        <div class="ground"></div>
+      </div>
+    </div>
+  </section>
+  <section class="love-message">
+    <p>不是春光，也不是盛夏，才让它生长；<br>不是骤雨，也不是晴阳，才为它引路。<br>爱在静默里抽芽，脆弱又无穷，<br>在两只紧握的手心里，悄悄绽放。<br><br>它从泪光里、也从笑意里开花，<br>在仿佛一切都熄灭的夜里，依然长大；<br>它不借大地的根，只住进我们的血脉，<br>不随风的叶，只化作低声的告白——<br><br>爱是唯一不畏季节的花，<br>因为它只因一个理由而生：<br><br><em>你。</em></p>
+    <span class="signature">~ 为你，恒久 ~</span>
+  </section>
+  <footer class="footer"><div class="footer-hearts">💕 💗 ❤️ 💗 💕</div><p>用爱制成，送给你</p></footer>
+</div>
+<script>
+  const heartsContainer=document.getElementById('heartsContainer');
+  const emojis=['❤️','💕','💗','💖','💝','💓','💘','🩷','♥️'];
+  function createFloatingHeart(){const h=document.createElement('div');h.className='floating-heart';h.textContent=emojis[Math.floor(Math.random()*emojis.length)];h.style.left=Math.random()*100+'%';h.style.fontSize=(Math.random()*30+15)+'px';h.style.animationDuration=(Math.random()*8+7)+'s';h.style.animationDelay=(Math.random()*2)+'s';heartsContainer.appendChild(h);setTimeout(()=>h.remove(),16000);}
+  for(let i=0;i<15;i++)setTimeout(createFloatingHeart,i*400);
+  setInterval(createFloatingHeart,800);
+  const sparklesEl=document.getElementById('sparkles');
+  function createSparkle(){const s=document.createElement('div');s.className='sparkle';s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';s.style.animationDelay=Math.random()*3+'s';s.style.width=s.style.height=(Math.random()*4+2)+'px';sparklesEl.appendChild(s);}
+  for(let i=0;i<40;i++)createSparkle();
+  const petalsContainer=document.getElementById('petalsContainer');
+  function createPetal(){const p=document.createElement('div');p.className='petal';p.style.left=Math.random()*100+'%';p.style.animationDuration=(Math.random()*4+4)+'s';p.style.animationDelay=Math.random()*5+'s';const hue=Math.random()>0.5?`hsl(${340+Math.random()*20},80%,${60+Math.random()*20}%)`:`hsl(350,60%,${70+Math.random()*15}%)`;p.style.background=hue;p.style.width=(10+Math.random()*10)+'px';p.style.height=(8+Math.random()*8)+'px';petalsContainer.appendChild(p);setTimeout(()=>p.remove(),10000);}
+  for(let i=0;i<8;i++)setTimeout(createPetal,i*600);
+  setInterval(createPetal,1200);
+  document.addEventListener('click',e=>{for(let i=0;i<5;i++){const h=document.createElement('div');h.className='click-heart';h.textContent=emojis[Math.floor(Math.random()*emojis.length)];h.style.left=(e.clientX+(Math.random()-0.5)*60)+'px';h.style.top=(e.clientY+(Math.random()-0.5)*60)+'px';h.style.fontSize=(Math.random()*20+15)+'px';document.body.appendChild(h);setTimeout(()=>h.remove(),1500);}});
+  document.getElementById('megaHeart').addEventListener('click',e=>{e.stopPropagation();for(let i=0;i<20;i++){const h=document.createElement('div');h.className='click-heart';h.textContent=emojis[Math.floor(Math.random()*emojis.length)];const a=Math.PI*2/20*i,dist=Math.random()*150+80;h.style.left=(e.clientX+Math.cos(a)*dist)+'px';h.style.top=(e.clientY+Math.sin(a)*dist)+'px';h.style.fontSize=(Math.random()*25+20)+'px';document.body.appendChild(h);setTimeout(()=>h.remove(),1500);}});
+</script>
+</body>
+</html>

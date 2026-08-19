@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>粒子文字 I LOVE YOU · 七夕</title>
+<style>
+  html,body{margin:0;height:100%;background:#05030c;overflow:hidden;}
+  canvas{display:block;}
+  .tip{position:fixed;left:0;right:0;bottom:14px;text-align:center;color:#ffc6ec;
+       font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.5;pointer-events:none;}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       color:#ff5b8a;font:16px/1.6 monospace;padding:20px;text-align:center;white-space:pre-wrap;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">I LOVE YOU · 汇聚 · 停留 · 散落 · 重逢</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m){var e=document.getElementById('err');e.style.display='flex';e.textContent='出错了：'+m;};
+(function(){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,DPR,cx,cy;
+  const off=document.createElement('canvas'),octx=off.getContext('2d');
+  let targets=[],parts=[],phase='gather',pt=0,lastT=0;
+  const TEXT='I LOVE YOU';
+  function buildTargets(){
+    off.width=W; off.height=H;
+    octx.clearRect(0,0,W,H);
+    let fs=Math.min(W*0.18,H*0.28);
+    octx.fillStyle='#fff'; octx.textAlign='center'; octx.textBaseline='middle';
+    octx.font='bold '+fs+'px Arial, sans-serif';
+    while(octx.measureText(TEXT).width>W*0.92 && fs>12){fs*=0.92;octx.font='bold '+fs+'px Arial, sans-serif';}
+    octx.fillText(TEXT, W/2, H/2);
+    let img;
+    try{img=octx.getImageData(0,0,W,H).data;}catch(e){img=null;}
+    const step=Math.max(4,Math.round(5*DPR)),pts=[];
+    if(img){for(let y=0;y<H;y+=step)for(let x=0;x<W;x+=step){if(img[(y*W+x)*4+3]>128)pts.push({x:x,y:y,hue:(x/W*300+200)%360});}}
+    return pts;
+  }
+  function init(){
+    targets=buildTargets();
+    parts=[];
+    for(const tg of targets)parts.push({x:Math.random()*W,y:Math.random()*H,tx:tg.x,ty:tg.y,hue:tg.hue,vx:0,vy:0});
+  }
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    cx=W/2; cy=H/2;
+    init();
+  }
+  addEventListener('resize',resize); resize();
+  function frame(now){
+    const dt=Math.min(0.05,(now-lastT)/1000||0.016); lastT=now; pt+=dt;
+    if(phase==='gather'){
+      for(const p of parts){p.x+=(p.tx-p.x)*0.08;p.y+=(p.ty-p.y)*0.08;}
+      if(pt>2.6){phase='hold';pt=0;}
+    }else if(phase==='hold'){
+      for(const p of parts){p.x=p.tx+(Math.random()-0.5)*1.4;p.y=p.ty+(Math.random()-0.5)*1.4;}
+      if(pt>1.8){phase='disperse';pt=0;
+        for(const p of parts){const dx=p.tx-cx,dy=p.ty-cy;p.vx=dx*0.03+(Math.random()-0.5)*5;p.vy=dy*0.03-2+(Math.random()-0.5)*5;}}
+    }else{
+      for(const p of parts){p.x+=p.vx*DPR;p.y+=p.vy*DPR;p.vy+=0.05*DPR;p.vx*=0.985;}
+      if(pt>1.6){phase='gather';pt=0;for(const p of parts){p.x=Math.random()*W;p.y=Math.random()*H;}}
+    }
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='rgba(5,3,12,0.28)'; ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    for(const p of parts){
+      ctx.beginPath();
+      ctx.fillStyle='hsla('+p.hue+',100%,68%,0.95)';
+      ctx.arc(p.x,p.y,1.6*DPR,0,6.283); ctx.fill();
+    }
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>心电图心跳 · 七夕</title>
+<style>
+  html,body{margin:0;height:100%;background:#03060a;overflow:hidden;}
+  canvas{display:block;}
+  .tip{position:fixed;left:0;right:0;bottom:14px;text-align:center;color:#ff9ad0;
+       font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.5;pointer-events:none;}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       color:#ff5b8a;font:16px/1.6 monospace;padding:20px;text-align:center;white-space:pre-wrap;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">每一次心跳，都是想你</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m){var e=document.getElementById('err');e.style.display='flex';e.textContent='出错了：'+m;};
+(function(){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,DPR,baseY,amp,step,L;
+  let ys=[], ph=0, hearts=[];
+  function gauss(x,mu,sig){const d=x-mu;return Math.exp(-(d*d)/(2*sig*sig));}
+  function ecg(p){
+    let v=0;
+    v+=0.12*gauss(p,0.18,0.025);
+    v-=0.10*gauss(p,0.30,0.012);
+    v+=1.00*gauss(p,0.33,0.012);
+    v-=0.25*gauss(p,0.36,0.014);
+    v+=0.22*gauss(p,0.55,0.040);
+    return v;
+  }
+  function heartShape(c,s){
+    c.beginPath();
+    for(let i=0;i<=64;i++){
+      const t=i/64*Math.PI*2;
+      const x=16*Math.pow(Math.sin(t),3);
+      const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+      const px=x/16*s, py=-y/16*s;
+      if(i===0)c.moveTo(px,py);else c.lineTo(px,py);
+    }
+    c.closePath();
+  }
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    baseY=H*0.56; amp=H*0.22;
+    L=Math.max(200,Math.floor(W/(2*DPR)));
+    step=W/(L-1);
+    ys=new Array(L).fill(0);
+    ph=0;
+  }
+  addEventListener('resize',resize);
+  resize();
+  let prevR=false;
+  function frame(){
+    // new sample
+    ph+=0.006;
+    if(ph>=1) ph-=1;
+    const atR = (ph>0.33 && ph<0.345);
+    const v=ecg(ph);
+    ys.push(v); if(ys.length>L) ys.shift();
+    if(atR && !prevR){ hearts.push({x:W-2, y:baseY-amp, life:1, s:(26+Math.random()*10)*DPR, h:320+Math.random()*30}); }
+    prevR=atR;
+
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='#03060a'; ctx.fillRect(0,0,W,H);
+    // faint grid
+    ctx.strokeStyle='rgba(80,200,160,0.05)'; ctx.lineWidth=1;
+    for(let x=0;x<W;x+=step*10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=baseY-amp*1.4;y<baseY+amp*0.6;y+=amp*0.4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    // ecg line
+    ctx.globalCompositeOperation='lighter';
+    ctx.beginPath();
+    for(let i=0;i<ys.length;i++){
+      const x=i*step, y=baseY-ys[i]*amp;
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(255,90,165,0.35)'; ctx.lineWidth=6*DPR; ctx.stroke();
+    ctx.strokeStyle='rgba(255,150,210,0.95)'; ctx.lineWidth=2*DPR; ctx.stroke();
+
+    // beat hearts scroll left with trace
+    for(let i=hearts.length-1;i>=0;i--){
+      const hb=hearts[i];
+      hb.x-=step; hb.life-=0.012;
+      if(hb.life<=0){hearts.splice(i,1);continue;}
+      ctx.save();
+      ctx.translate(hb.x,hb.y); ctx.scale(hb.s*(0.7+0.3*(1-hb.life)),hb.s);
+      ctx.fillStyle='hsla('+hb.h+',100%,75%,'+(hb.life*0.9)+')';
+      heartShape(ctx,1); ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>爱心气泡 · 七夕</title>
+<style>
+  html,body{margin:0;height:100%;background:#06030f;overflow:hidden;}
+  canvas{display:block;}
+  .tip{position:fixed;left:0;right:0;bottom:14px;text-align:center;color:#ffb6e6;
+       font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.5;pointer-events:none;}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       color:#ff5b8a;font:16px/1.6 monospace;padding:20px;text-align:center;white-space:pre-wrap;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">一整片心动，慢慢浮起</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m){var e=document.getElementById('err');e.style.display='flex';e.textContent='出错了：'+m;};
+(function(){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,DPR;
+  function heartShape(c,s){
+    c.beginPath();
+    for(let i=0;i<=64;i++){
+      const t=i/64*Math.PI*2;
+      const x=16*Math.pow(Math.sin(t),3);
+      const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+      const px=x/16*s, py=-y/16*s;
+      if(i===0)c.moveTo(px,py);else c.lineTo(px,py);
+    }
+    c.closePath();
+  }
+  let bubbles=[];
+  function spawn(){
+    const s=(14+Math.random()*40)*DPR;
+    bubbles.push({x:Math.random()*W, y:H+40+s, vy:0.3+Math.random()*0.7,
+      s:s, h:305+Math.random()*50, ph:Math.random()*6.28, amp:0.3+Math.random()*0.8,
+      alpha:0.5+Math.random()*0.4, outline:Math.random()<0.3});
+  }
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    bubbles=[];
+    const initN=Math.round(W*H/26000);
+    for(let i=0;i<initN;i++){ spawn(); bubbles[i].y=Math.random()*H; }
+  }
+  addEventListener('resize',resize);
+  resize();
+  let t=0;
+  function frame(){
+    t+=0.016;
+    ctx.globalCompositeOperation='source-over';
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#06030f'); g.addColorStop(1,'#120626');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    ctx.globalCompositeOperation='lighter';
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b=bubbles[i];
+      b.y-=b.vy*DPR;
+      b.x+=Math.sin(t*0.6+b.ph)*b.amp*DPR;
+      if(b.y< -b.s*1.5){ bubbles.splice(i,1); continue; }
+      const a=b.alpha*(0.6+0.4*Math.sin(t*1.2+b.ph));
+      ctx.save();
+      ctx.translate(b.x,b.y); ctx.scale(b.s,b.s);
+      if(b.outline){
+        ctx.lineWidth=0.06; ctx.strokeStyle='hsla('+b.h+',100%,78%,'+a+')';
+        heartShape(ctx,1); ctx.stroke();
+      }else{
+        ctx.fillStyle='hsla('+b.h+',95%,'+(60+0.0)+'%,'+a+')';
+        heartShape(ctx,1); ctx.fill();
+      }
+      ctx.restore();
+      // soft glow
+      ctx.save();
+      ctx.translate(b.x,b.y); ctx.scale(b.s*1.6,b.s*1.6);
+      ctx.fillStyle='hsla('+b.h+',100%,70%,'+(a*0.18)+')';
+      heartShape(ctx,1); ctx.fill();
+      ctx.restore();
+    }
+    if(bubbles.length<Math.round(W*H/22000) && Math.random()<0.4) spawn();
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

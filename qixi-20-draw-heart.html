@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>为你画一颗心 · qixi-20</title>
+<script>
+window.onerror=function(m,s,l){var d=document.getElementById('err');if(!d){d=document.createElement('div');d.id='err';d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c00;color:#fff;font:13px/1.5 monospace;padding:8px 12px;white-space:pre-wrap';document.body.appendChild(d);}d.textContent='⚠ 运行错误：'+(m||'')+' @行'+(l||'');};
+</script>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#08000f;font-family:-apple-system,system-ui,sans-serif;text-align:center;height:100%;width:100%;}
+  h1{margin-top:18px;color:#ffd6e7;font-weight:400;letter-spacing:2px;font-size:18px;}
+  button{font-size:18px;padding:10px 26px;border:none;border-radius:24px;background:linear-gradient(135deg,#ff5e8a,#ff2d55);color:#fff;cursor:pointer;position:relative;z-index:10;box-shadow:0 6px 20px rgba(255,45,85,.4);}
+  #eraseBtn{display:none;background:linear-gradient(135deg,#fff,#ffd6e7);color:#c01050;position:absolute;z-index:11;}
+  #eraser{display:none;position:absolute;width:80px;height:80px;border-radius:50%;border:2px dashed rgba(255,255,255,.8);background:rgba(255,255,255,.12);cursor:grab;z-index:20;user-select:none;pointer-events:none;}
+  canvas{position:absolute;top:0;left:0;background:transparent;z-index:1;}
+  #baseCanvas{z-index:1;}
+  #topCanvas{z-index:2;}
+  #footer{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#ff9ad2;font-size:14px;z-index:30;opacity:.8;}
+</style>
+</head>
+<body>
+  <h1>为你写一颗心</h1>
+  <button id="startBtn">点击开始</button>
+  <button id="eraseBtn">擦除揭示</button>
+  <div id="eraser"></div>
+  <canvas id="baseCanvas"></canvas>
+  <canvas id="topCanvas"></canvas>
+  <div id="footer">点击开始 → 看心被画出、烟花绽放 → 擦掉表层，露出藏在心里的话</div>
+<script>
+(function(){
+  const baseCanvas=document.getElementById('baseCanvas');
+  const baseCtx=baseCanvas.getContext('2d');
+  const topCanvas=document.getElementById('topCanvas');
+  const topCtx=topCanvas.getContext('2d');
+  const eraser=document.getElementById('eraser');
+  const startBtn=document.getElementById('startBtn');
+  const eraseBtn=document.getElementById('eraseBtn');
+  // 想换心里的话，改这里即可（两行）：
+  const MSG_LINE1='I';
+  const MSG_LINE2='LOVE YOU';
+  const colors=['#f8c8dc','#ffb6c1','#ff69b4','#ffffff','#ff4f4f','#ff2d55'];
+  let W,H,state='idle',drawI=0,fwTimer=0,coverCount=0,coverMax=900,particles=[];
+
+  function resizeCanvas(){W=baseCanvas.width=topCanvas.width=innerWidth;H=baseCanvas.height=topCanvas.height=innerHeight;}
+  window.addEventListener('resize',resizeCanvas); resizeCanvas();
+  const R=Math.random;
+  function xt(t){return 16*Math.pow(Math.sin(t),3);}
+  function yt(t){return 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);}
+  function drawHeart(ctx,x,y,size,color){
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.bezierCurveTo(x,y-size/2,x-size,y-size/2,x-size,y);
+    ctx.bezierCurveTo(x-size,y+size,x,y+size*1.5,x,y+size*2);
+    ctx.bezierCurveTo(x,y+size*1.5,x+size,y+size,x+size,y);
+    ctx.bezierCurveTo(x+size,y-size/2,x,y-size/2,x,y);
+    ctx.fillStyle=color; ctx.fill(); ctx.closePath();
+  }
+  function drawGlowHeart(ctx,pulse){
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    ctx.translate(W/2,H/2);
+    ctx.beginPath();
+    for(let t=0;t<=Math.PI*2+0.01;t+=0.01){
+      const x=xt(t)*15*pulse, y=-yt(t)*15*pulse;
+      if(t===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    const g=ctx.createRadialGradient(0,0,0,0,0,210*pulse);
+    g.addColorStop(0,'rgba(255,80,120,0.55)');
+    g.addColorStop(1,'rgba(255,80,120,0)');
+    ctx.fillStyle=g; ctx.fill();
+    ctx.lineWidth=2.5; ctx.strokeStyle='rgba(255,150,180,0.95)'; ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    ctx.fillStyle='rgba(255,225,238,0.95)';
+    ctx.textAlign='center';
+    ctx.font='bold '+Math.min(W,H)*0.055+'px -apple-system,system-ui,sans-serif';
+    ctx.fillText(MSG_LINE1,W/2,H/2-Math.min(W,H)*0.02);
+    ctx.fillText(MSG_LINE2,W/2,H/2+Math.min(W,H)*0.045);
+    ctx.restore();
+  }
+  function spawnFireworks(){
+    for(let b=0;b<5;b++){
+      const cx=R()*W, cy=R()*H*0.6, hue=R()*60+330;
+      for(let i=0;i<55;i++){
+        const a=R()*Math.PI*2, sp=R()*6+2;
+        particles.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:hue});
+      }
+    }
+  }
+  function updateParticles(){
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.vx*=0.99; p.life-=0.012;
+      if(p.life<=0){particles.splice(i,1);continue;}
+      baseCtx.globalCompositeOperation='lighter';
+      baseCtx.fillStyle='hsla('+p.hue+',100%,65%,'+p.life+')';
+      baseCtx.beginPath(); baseCtx.arc(p.x,p.y,2,0,6.3); baseCtx.fill();
+    }
+  }
+  function start(){
+    startBtn.style.display='none';
+    state='drawing'; drawI=0;
+  }
+  function activateEraser(){
+    eraseBtn.style.display='none';
+    eraser.style.display='block';
+    let dragging=false;
+    topCtx.globalCompositeOperation='destination-out';
+    function eraseAt(x,y){topCtx.beginPath();topCtx.arc(x,y,42,0,6.3);topCtx.fill();}
+    eraser.addEventListener('mousedown',()=>dragging=true);
+    window.addEventListener('mouseup',()=>dragging=false);
+    window.addEventListener('mousemove',e=>{if(!dragging)return;eraser.style.left=(e.clientX-40)+'px';eraser.style.top=(e.clientY-40)+'px';eraseAt(e.clientX,e.clientY);});
+    eraser.addEventListener('touchstart',()=>dragging=true);
+    window.addEventListener('touchend',()=>dragging=false);
+    window.addEventListener('touchmove',e=>{if(!dragging||!e.touches.length)return;const t=e.touches[0];eraser.style.left=(t.clientX-40)+'px';eraser.style.top=(t.clientY-40)+'px';eraseAt(t.clientX,t.clientY);});
+  }
+  function loop(){
+    baseCtx.clearRect(0,0,W,H);
+    if(state==='drawing'){
+      drawI++;
+      const t=drawI*0.01;
+      baseCtx.save();
+      baseCtx.globalCompositeOperation='source-over';
+      baseCtx.strokeStyle='#ff2d55'; baseCtx.lineWidth=2.5;
+      baseCtx.beginPath();
+      for(let tt=0;tt<=t&&tt<=Math.PI*2;tt+=0.01){
+        const x=xt(tt)*15+W/2, y=-yt(tt)*15+H/2;
+        if(tt===0)baseCtx.moveTo(x,y); else baseCtx.lineTo(x,y);
+      }
+      baseCtx.stroke();
+      baseCtx.restore();
+      if(t>=Math.PI*2){state='fireworks';fwTimer=0;spawnFireworks();}
+    } else if(state==='fireworks'){
+      fwTimer++;
+      if(fwTimer%18===0&&fwTimer<120) spawnFireworks();
+      updateParticles();
+      if(fwTimer>170){state='cover';coverCount=0;}
+    } else if(state==='cover'){
+      updateParticles();
+      if(coverCount<coverMax){
+        for(let k=0;k<22&&coverCount<coverMax;k++){
+          drawHeart(topCtx,R()*W,R()*H,R()*18+10,colors[~~(R()*colors.length)]);
+          coverCount++;
+        }
+      } else {
+        eraseBtn.style.display='block';
+        eraseBtn.style.left=(W/2-60)+'px';
+        eraseBtn.style.top=(H/2)+'px';
+        state='reveal';
+      }
+    } else if(state==='reveal'){
+      updateParticles();
+      drawGlowHeart(baseCtx,1+0.04*Math.sin(Date.now()*0.003));
+    }
+    requestAnimationFrame(loop);
+  }
+  startBtn.addEventListener('click',start);
+  eraseBtn.addEventListener('click',activateEraser);
+  loop();
+})();
+</script>
+</body>
+</html>

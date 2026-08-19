@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>双心对称 · 七夕</title>
+<style>
+  html,body{margin:0;height:100%;background:#04030c;overflow:hidden;}
+  canvas{display:block;}
+  .tip{position:fixed;left:0;right:0;bottom:14px;text-align:center;color:#ffb0e6;
+       font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.5;pointer-events:none;}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       color:#ff5b8a;font:16px/1.6 monospace;padding:20px;text-align:center;white-space:pre-wrap;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">两心相对，念念不忘</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m){var e=document.getElementById('err');e.style.display='flex';e.textContent='出错了：'+m;};
+(function(){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,DPR,sc,cxL,cxR,cy,s;
+  let pts=[];
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    sc=Math.min(W/3.4,H/3.0);
+    cy=H/2;
+    cxL=W/2 - sc*0.62;
+    cxR=W/2 + sc*0.62;
+    s=sc*0.5;
+    pts=[];
+    const N=220;
+    for(let i=0;i<N;i++) pts.push(i/N*Math.PI*2);
+  }
+  addEventListener('resize',resize);
+  resize();
+  let t=0;
+  function frame(){
+    t+=0.016;
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='#04030c'; ctx.fillRect(0,0,W,H);
+
+    const beat=1+0.06*Math.sin(t*2.0)+0.03*Math.sin(t*4.1);
+    const ss=s*beat;
+
+    // central glow
+    ctx.globalCompositeOperation='lighter';
+    const cg=ctx.createRadialGradient(W/2,cy,0,W/2,cy,sc*0.9);
+    const pulse=0.25+0.18*Math.abs(Math.sin(t*2.0));
+    cg.addColorStop(0,'rgba(255,120,200,'+pulse+')');
+    cg.addColorStop(1,'rgba(255,120,200,0)');
+    ctx.fillStyle=cg; ctx.fillRect(W/2-sc,cy-sc,sc*2,sc*2);
+
+    // travelling sparkles between tips
+    for(let k=0;k<5;k++){
+      const prog=((t*0.25+k/5)%1);
+      const x=cxL+(cxR-cxL)*prog;
+      const y=cy+ss*1.06 - Math.sin(prog*Math.PI)*sc*0.5;
+      ctx.beginPath();
+      ctx.fillStyle='hsla(320,100%,80%,'+(0.9*(1-Math.abs(prog-0.5)*1.4))+')';
+      ctx.arc(x,y,1.8*DPR,0,6.283); ctx.fill();
+    }
+
+    // two hearts outline flow
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i]+t*0.5;
+      const tt=a% (Math.PI*2);
+      const X=16*Math.pow(Math.sin(tt),3);
+      const Y=13*Math.cos(tt)-5*Math.cos(2*tt)-2*Math.cos(3*tt)-Math.cos(4*tt);
+      const h=300+(i/pts.length)*60;
+      const a2=0.6+0.4*Math.sin(t*2+i*0.1);
+      // left
+      ctx.beginPath();
+      ctx.fillStyle='hsla('+h+',100%,72%,'+a2+')';
+      ctx.arc(cxL + X/16*ss, cy - Y/16*ss, 2*DPR, 0, 6.283); ctx.fill();
+      // right (mirrored)
+      ctx.beginPath();
+      ctx.fillStyle='hsla('+h+',100%,72%,'+a2+')';
+      ctx.arc(cxR - X/16*ss, cy - Y/16*ss, 2*DPR, 0, 6.283); ctx.fill();
+    }
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

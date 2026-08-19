@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>霓虹描边心跳 · 七夕</title>
+<style>
+  html,body{margin:0;height:100%;background:#03020a;overflow:hidden;}
+  canvas{display:block;}
+  .tip{position:fixed;left:0;right:0;bottom:14px;text-align:center;color:#ffc6ec;
+       font:14px/1.4 -apple-system,system-ui,sans-serif;opacity:.5;pointer-events:none;}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       color:#ff5b8a;font:16px/1.6 monospace;padding:20px;text-align:center;white-space:pre-wrap;z-index:9;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="tip">霓虹描边 · 一圈光沿着心跳奔跑</div>
+<div id="err"></div>
+<script>
+window.onerror=function(m){var e=document.getElementById('err');e.style.display='flex';e.textContent='出错了：'+m;};
+(function(){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,DPR,sc,cx,cy,outline=[];
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    sc=Math.min(W/2.6,H/2.8);
+    cx=W/2; cy=H/2+sc*0.1;
+    outline=[];
+    const N=260;
+    for(let i=0;i<N;i++){
+      const t=i/N*Math.PI*2;
+      const x=16*Math.pow(Math.sin(t),3);
+      const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+      outline.push({x:x/16, y:-y/16});
+    }
+  }
+  addEventListener('resize',resize); resize();
+  let t=0, head=0;
+  function frame(){
+    t+=0.016; head=(head+1.6)%outline.length;
+    const beat=1+0.06*Math.sin(t*2.2)+0.04*Math.sin(t*4.4);
+    const s=sc*beat;
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='#03020a'; ctx.fillRect(0,0,W,H);
+
+    // center glow
+    ctx.globalCompositeOperation='lighter';
+    const cg=ctx.createRadialGradient(cx,cy,0,cx,cy,sc*0.9);
+    const pulse=0.18+0.14*Math.abs(Math.sin(t*2.2));
+    cg.addColorStop(0,'rgba(255,90,170,'+pulse+')');
+    cg.addColorStop(1,'rgba(255,90,170,0)');
+    ctx.fillStyle=cg; ctx.fillRect(cx-sc,cy-sc,sc*2,sc*2);
+
+    // faint full outline
+    ctx.globalCompositeOperation='source-over';
+    ctx.beginPath();
+    for(let i=0;i<outline.length;i++){
+      const px=cx+outline[i].x*s, py=cy+outline[i].y*s;
+      if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.strokeStyle='rgba(255,120,200,0.28)'; ctx.lineWidth=2*DPR; ctx.stroke();
+
+    // running light
+    ctx.globalCompositeOperation='lighter';
+    ctx.lineCap='round';
+    const N=outline.length, win=42;
+    for(let i=0;i<N;i++){
+      const d=Math.min((i-head+N)%N,(head-i+N)%N);
+      if(d>win)continue;
+      const b=1-d/win;
+      const a=outline[i], bb=outline[(i+1)%N];
+      const x1=cx+a.x*s, y1=cy+a.y*s, x2=cx+bb.x*s, y2=cy+bb.y*s;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+      ctx.strokeStyle='hsla('+(320+b*40)+',100%,'+(60+b*30)+'%,'+(b*b)+')';
+      ctx.lineWidth=(1+b*3)*DPR; ctx.stroke();
+    }
+    // head sparkle
+    const hp=outline[Math.floor(head)];
+    ctx.beginPath();
+    ctx.fillStyle='rgba(255,210,240,0.9)';
+    ctx.arc(cx+hp.x*s, cy+hp.y*s, 3.2*DPR, 0, 6.283); ctx.fill();
+
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
