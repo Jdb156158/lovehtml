@@ -1,0 +1,8 @@
+# macOS AppleDouble 资源分叉（非代码，自动生成）
+._*
+
+# 个人工作记录，不随仓库公开
+.workbuddy/
+
+# 旧打包文件
+*.zip
