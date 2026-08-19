@@ -8,7 +8,7 @@
 ## ✨ 快速开始
 
 - **🌐 在线预览**：打开 https://Jdb156158.github.io/lovehtml/ 即可一页浏览全部 30 个特效，无需下载，链接可直接发给 TA。
-- **方式一**：直接双击任意一个 `qixi-xx-*.html` 文件，浏览器即开即看。
+- **方式一**：进入任意 `qixi-xx-*` 文件夹，双击里面的 `qixi-xx-*.html`，浏览器即开即看。
 - **方式二**：打开 `index.html`（总导航页），一页浏览全部 30 个特效，点卡片直达。
 
 > 所有特效均已适配手机 / 电脑屏幕（响应式），并内置错误兜底——即便出错也只会显示提示文字，而不会一片黑屏。
@@ -81,12 +81,15 @@
 
 ```
 lovehtml/
-├── index.html              # 总导航页（30 个特效卡片）
-├── README.md               # 本说明
-├── qixi-1-beating-heart.html
-├── qixi-2-heart-rain.html
-├── ...                     # 共 30 个，qixi-1 ~ qixi-30
-└── qixi-30-neon-heart.html
+├── index.html                      # 总导航页（30 个特效卡片）
+├── README.md                       # 本说明
+├── qixi-1-beating-heart/           # 每个案例一个同名文件夹
+│   └── qixi-1-beating-heart.html
+├── qixi-2-heart-rain/
+│   └── qixi-2-heart-rain.html
+├── ...                             # 共 30 个，qixi-1 ~ qixi-30 各自一个文件夹
+└── qixi-30-neon-heart/
+    └── qixi-30-neon-heart.html
 ```
 
 ---
